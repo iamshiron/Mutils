@@ -14,6 +14,10 @@ public class MutilsDbContext : DbContext {
     public DbSet<ListPreset> ListPresets => Set<ListPreset>();
     public DbSet<StoredImage> StoredImages => Set<StoredImage>();
     public DbSet<ImageJob> ImageJobs => Set<ImageJob>();
+    public DbSet<Bundle> Bundles => Set<Bundle>();
+    public DbSet<Series> Series => Set<Series>();
+    public DbSet<BundleCharacterEntry> BundleCharacterEntries => Set<BundleCharacterEntry>();
+    public DbSet<BundleSeriesEntry> BundleSeriesEntries => Set<BundleSeriesEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.Entity<User>(entity => {
@@ -34,6 +38,20 @@ public class MutilsDbContext : DbContext {
                 .WithMany(s => s.Characters)
                 .HasForeignKey(e => e.StoredImageId)
                 .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(e => e.Series)
+                .WithMany(s => s.Characters)
+                .HasForeignKey(s => s.SeriesId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Series>(entity => {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Name);
+        });
+
+        modelBuilder.Entity<Series>(entity => {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Name);
         });
 
         modelBuilder.Entity<StoredImage>(entity => {
@@ -57,6 +75,30 @@ public class MutilsDbContext : DbContext {
                 .WithMany(c => c.CollectionEntries)
                 .HasForeignKey(e => e.CharacterId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BundleCharacterEntry>(entity => {
+            entity.HasKey(e => new { e.BundleId, e.CharacterId });
+            entity.HasOne(e => e.Bundle)
+                .WithMany(b => b.CharacterEntries)
+                .HasForeignKey(b => b.CharacterId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Character)
+                .WithMany(c => c.BundleEntries)
+                .HasForeignKey(b => b.CharacterId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BundleSeriesEntry>(entity => {
+            entity.HasKey(e => new { e.BundleId, e.SeriesId });
+            entity.HasOne(e => e.Bundle)
+                .WithMany(b => b.SeriesEntries)
+                .HasForeignKey(b => b.SeriesId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Series)
+                .WithMany(c => c.BundleEntries)
+                .HasForeignKey(b => b.SeriesId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<EnableList>(entity => {

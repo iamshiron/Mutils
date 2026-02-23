@@ -16,5 +16,9 @@ public sealed class Character : BaseEntity {
     public StoredImage? StoredImage { get; set; }
     public string Source { get; set; } = "mudae";
 
+    public Guid? SeriesId { get; set; } = null;
+
     public ICollection<CollectionEntry> CollectionEntries { get; set; } = [];
+    public ICollection<BundleCharacterEntry> BundleEntries { get; set; } = [];
+    public Series? Series { get; set; }
 }
