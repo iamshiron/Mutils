@@ -1,0 +1,399 @@
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using Mutils.Core.DTOs;
+using Mutils.Core.Services;
+using Mutils.Infrastructure.Data;
+using Mutils.Core.Entities;
+
+namespace Mutils.Api.Endpoints;
+
+public static class CollectionEndpoints {
+    private static readonly ILogger Logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger("CollectionEndpoints");
+
+    public static void MapCollectionEndpoints(this IEndpointRouteBuilder app) {
+        var group = app.MapGroup("/api/collection").RequireAuthorization();
+
+        group.MapGet("/", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db,
+            string? search,
+            string? sortBy,
+            string? sortOrder,
+            int page = 1,
+            int pageSize = 50) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var query = db.CollectionEntries
+                    .Include(e => e.Character)
+                    .Where(e => e.UserId == userId);
+
+                if (!string.IsNullOrEmpty(search)) {
+                    query = query.Where(e => e.Character.Name.Contains(search));
+                }
+
+                sortBy ??= "rank";
+                sortOrder ??= "asc";
+
+                query = (sortBy.ToLower(), sortOrder.ToLower()) switch {
+                    ("name", "asc") => query.OrderBy(e => e.Character.Name),
+                    ("name", "desc") => query.OrderByDescending(e => e.Character.Name),
+                    ("rank", "asc") => query.OrderBy(e => e.Character.Rank ?? int.MaxValue),
+                    ("rank", "desc") => query.OrderByDescending(e => e.Character.Rank ?? 0),
+                    ("kakera", "asc") => query.OrderBy(e => e.Character.Kakera ?? 0),
+                    ("kakera", "desc") => query.OrderByDescending(e => e.Character.Kakera ?? 0),
+                    ("claims", "asc") => query.OrderBy(e => e.Character.Claims ?? 0),
+                    ("claims", "desc") => query.OrderByDescending(e => e.Character.Claims ?? 0),
+                    ("acquiredat", "asc") => query.OrderBy(e => e.AcquiredAt),
+                    ("keys", "asc") => query.OrderBy(e => e.Character.KeyCount ?? 0),
+                    ("keys", "desc") => query.OrderByDescending(e => e.Character.KeyCount ?? 0),
+                    ("acquiredat", _) => query.OrderByDescending(e => e.AcquiredAt),
+                    _ => query.OrderBy(e => e.Character.Rank ?? int.MaxValue)
+                };
+
+                var total = await query.CountAsync();
+                var totalPages = (int) Math.Ceiling(total / (double) pageSize);
+
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(e => new CollectionEntryDto(
+                        e.Id,
+                        new CharacterDto(
+                            e.Character.Id,
+                            e.Character.Name,
+                            e.Character.Rank,
+                            e.Character.Claims,
+                            e.Character.Images,
+                            e.Character.Gifs,
+                            e.Character.SeriesCount,
+                            e.Character.KeyType,
+                            e.Character.KeyCount,
+                            e.Character.Kakera,
+                            e.Character.Sp,
+                            e.Character.OriginalImageUrl,
+                            e.Character.StoredImageId
+                        ),
+                        e.AcquiredAt,
+                        e.Notes
+                    ))
+                    .ToListAsync();
+
+                return Results.Ok(new PaginatedResponse<CollectionEntryDto>(
+                    items, total, page, pageSize, totalPages
+                ));
+            });
+
+        group.MapGet("/stats", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var entries = await db.CollectionEntries
+                    .Include(e => e.Character)
+                    .Where(e => e.UserId == userId)
+                    .Select(e => e.Character)
+                    .ToListAsync();
+
+                var keyDistribution = entries
+                    .Where(c => c.KeyType is not null)
+                    .GroupBy(c => c.KeyType!)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                return Results.Ok(new CollectionStatsDto(
+                    entries.Count,
+                    entries.Sum(c => c.Kakera ?? 0),
+                    keyDistribution
+                ));
+            });
+
+        group.MapPost("/import", async (
+            ClaimsPrincipal user,
+            ImportRequest request,
+            MutilsDbContext db,
+            IMudaeParser parser) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var parsed = parser.ParseCollection(request.Data).ToList();
+
+                var imported = 0;
+                var skipped = 0;
+                var updated = 0;
+                var imageJobsCreated = 0;
+
+                var characterNames = parsed.Select(p => p.Name).Distinct().ToList();
+                var existingCharacters = await db.Characters
+                    .Where(c => characterNames.Contains(c.Name))
+                    .ToDictionaryAsync(c => c.Name);
+
+                var existingEntries = await db.CollectionEntries
+                    .Where(e => e.UserId == userId && characterNames.Contains(e.Character.Name))
+                    .Select(e => e.Character.Name)
+                    .ToHashSetAsync();
+
+                var existingImageUrls = await db.StoredImages
+                    .Where(s => parsed.Select(p => p.ImageUrl).Contains(s.OriginalUrl))
+                    .Select(s => s.OriginalUrl)
+                    .ToHashSetAsync();
+
+                var pendingImageUrls = await db.ImageJobs
+                    .Where(j => parsed.Select(p => p.ImageUrl).Contains(j.OriginalUrl) && j.Status == ImageJobStatus.Pending)
+                    .Select(j => j.OriginalUrl)
+                    .ToHashSetAsync();
+
+                var newCharacters = new List<Character>();
+                var newEntries = new List<CollectionEntry>();
+                var newImageJobs = new List<ImageJob>();
+
+                foreach (var parsedChar in parsed) {
+                    var isExistingEntry = existingEntries.Contains(parsedChar.Name);
+
+                    if (!existingCharacters.TryGetValue(parsedChar.Name, out var character)) {
+                        character = new Character {
+                            Name = parsedChar.Name,
+                            Rank = parsedChar.Rank,
+                            Claims = parsedChar.Claims,
+                            Images = parsedChar.Images,
+                            Gifs = parsedChar.Gifs,
+                            SeriesCount = parsedChar.SeriesCount,
+                            KeyType = parsedChar.KeyType,
+                            KeyCount = parsedChar.KeyCount,
+                            Kakera = parsedChar.Kakera,
+                            Sp = parsedChar.Sp,
+                            OriginalImageUrl = parsedChar.ImageUrl,
+                            Source = "mudae"
+                        };
+                        newCharacters.Add(character);
+                        existingCharacters[parsedChar.Name] = character;
+                    } else {
+                        var needsUpdate = false;
+                        if (character.Rank != parsedChar.Rank) {
+                            character.Rank = parsedChar.Rank;
+                            needsUpdate = true;
+                        }
+                        if (parsedChar.Kakera is not null && character.Kakera != parsedChar.Kakera) {
+                            character.Kakera = parsedChar.Kakera;
+                            needsUpdate = true;
+                        }
+                        if (parsedChar.Sp is not null && character.Sp != parsedChar.Sp) {
+                            character.Sp = parsedChar.Sp;
+                            needsUpdate = true;
+                        }
+                        if (parsedChar.Claims is not null && character.Claims != parsedChar.Claims) {
+                            character.Claims = parsedChar.Claims;
+                            needsUpdate = true;
+                        }
+                        if (!string.IsNullOrEmpty(parsedChar.KeyType) && character.KeyType != parsedChar.KeyType) {
+                            character.KeyType = parsedChar.KeyType;
+                            character.KeyCount = parsedChar.KeyCount;
+                            needsUpdate = true;
+                        }
+                        if (!string.IsNullOrEmpty(parsedChar.ImageUrl) && character.OriginalImageUrl != parsedChar.ImageUrl) {
+                            character.OriginalImageUrl = parsedChar.ImageUrl;
+                            character.StoredImageId = null;
+                            needsUpdate = true;
+                        }
+                        if (needsUpdate) {
+                            updated++;
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(parsedChar.ImageUrl)
+                        && character.StoredImageId is null
+                        && !existingImageUrls.Contains(parsedChar.ImageUrl)
+                        && !pendingImageUrls.Contains(parsedChar.ImageUrl)) {
+                        newImageJobs.Add(new ImageJob {
+                            Character = character,
+                            OriginalUrl = parsedChar.ImageUrl
+                        });
+                        imageJobsCreated++;
+                    }
+
+                    if (isExistingEntry) {
+                        skipped++;
+                        continue;
+                    }
+
+                    newEntries.Add(new CollectionEntry {
+                        UserId = userId.Value,
+                        Character = character,
+                        AcquiredAt = DateTime.UtcNow
+                    });
+
+                    imported++;
+                }
+
+                if (newCharacters.Count > 0)
+                    db.Characters.AddRange(newCharacters);
+
+                if (newImageJobs.Count > 0)
+                    db.ImageJobs.AddRange(newImageJobs);
+
+                if (newEntries.Count > 0)
+                    db.CollectionEntries.AddRange(newEntries);
+
+                await db.SaveChangesAsync();
+
+                Logger.LogInformation("Import completed: {Imported} imported, {Skipped} skipped, {Updated} updated, {ImagesQueued} images queued",
+                    imported, skipped, updated, imageJobsCreated);
+
+                return Results.Ok(new ImportResponse(imported, skipped, updated, new List<string>(), imageJobsCreated));
+            });
+
+        group.MapPost("/process-images", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var charactersNeedingImages = await db.CollectionEntries
+                    .Where(e => e.UserId == userId && e.Character.StoredImageId == null && e.Character.OriginalImageUrl != null)
+                    .Select(e => e.Character)
+                    .Distinct()
+                    .ToListAsync();
+
+                if (charactersNeedingImages.Count == 0) {
+                    return Results.Ok(new { queued = 0, message = "No images to process" });
+                }
+
+                var existingStoredUrls = await db.StoredImages
+                    .Select(s => s.OriginalUrl)
+                    .ToHashSetAsync();
+
+                var pendingJobUrls = await db.ImageJobs
+                    .Where(j => j.Status == ImageJobStatus.Pending)
+                    .Select(j => j.OriginalUrl)
+                    .ToHashSetAsync();
+
+                var newJobs = new List<ImageJob>();
+                foreach (var character in charactersNeedingImages) {
+                    if (character.OriginalImageUrl is null)
+                        continue;
+
+                    if (existingStoredUrls.Contains(character.OriginalImageUrl))
+                        continue;
+
+                    if (pendingJobUrls.Contains(character.OriginalImageUrl))
+                        continue;
+
+                    newJobs.Add(new ImageJob {
+                        CharacterId = character.Id,
+                        OriginalUrl = character.OriginalImageUrl
+                    });
+                }
+
+                if (newJobs.Count > 0) {
+                    db.ImageJobs.AddRange(newJobs);
+                    await db.SaveChangesAsync();
+                }
+
+                Logger.LogInformation("Queued {Count} images for processing for user {UserId}", newJobs.Count, userId);
+
+                return Results.Ok(new { queued = newJobs.Count, message = $"Queued {newJobs.Count} images for background processing" });
+            });
+
+        group.MapGet("/image-status", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var total = await db.CollectionEntries
+                    .Where(e => e.UserId == userId && e.Character.OriginalImageUrl != null)
+                    .CountAsync();
+
+                var stored = await db.CollectionEntries
+                    .Where(e => e.UserId == userId && e.Character.StoredImageId != null)
+                    .CountAsync();
+
+                var pending = await db.ImageJobs
+                    .Where(j => j.Character.CollectionEntries.Any(e => e.UserId == userId) && j.Status == ImageJobStatus.Pending)
+                    .CountAsync();
+
+                var processing = await db.ImageJobs
+                    .Where(j => j.Character.CollectionEntries.Any(e => e.UserId == userId) && j.Status == ImageJobStatus.Processing)
+                    .CountAsync();
+
+                var failed = await db.ImageJobs
+                    .Where(j => j.Character.CollectionEntries.Any(e => e.UserId == userId) && j.Status == ImageJobStatus.Failed)
+                    .CountAsync();
+
+                return Results.Ok(new { total, stored, pending, processing, failed });
+            });
+
+        group.MapDelete("/clear", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var entries = await db.CollectionEntries
+                    .Where(e => e.UserId == userId)
+                    .ToListAsync();
+
+                db.CollectionEntries.RemoveRange(entries);
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { deleted = entries.Count });
+            });
+
+        group.MapPut("/{id}", async (
+            Guid id,
+            ClaimsPrincipal user,
+            UpdateCollectionRequest request,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var entry = await db.CollectionEntries
+                    .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+
+                if (entry is null) return Results.NotFound();
+
+                entry.Notes = request.Notes;
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { message = "Updated successfully" });
+            });
+
+        group.MapDelete("/{id}", async (
+            Guid id,
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var entry = await db.CollectionEntries
+                    .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
+
+                if (entry is null) return Results.NotFound();
+
+                db.CollectionEntries.Remove(entry);
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            });
+
+        group.MapGet("/images/{id}", async (
+            Guid id,
+            MutilsDbContext db,
+            IStorageService storageService) => {
+                var storedImage = await db.StoredImages.FindAsync(id);
+                if (storedImage is null) return Results.NotFound();
+
+                var stream = await storageService.GetImageAsync(storedImage.BucketName, storedImage.ObjectKey);
+                if (stream is null) return Results.NotFound();
+
+                return Results.Stream(stream, storedImage.ContentType);
+            }).AllowAnonymous();
+    }
+
+    private static Guid? GetUserId(ClaimsPrincipal user) {
+        var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return sub is not null ? Guid.Parse(sub) : null;
+    }
+}
+
+public record UpdateCollectionRequest(string? Notes);

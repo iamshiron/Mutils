@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+@theme {
+	--color-sakura-50: oklch(0.97 0.02 350);
+	--color-sakura-100: oklch(0.94 0.04 350);
+	--color-sakura-200: oklch(0.89 0.06 350);
+	--color-sakura-300: oklch(0.84 0.08 350);
+	--color-sakura-400: oklch(0.79 0.1 350);
+	--color-sakura-500: oklch(0.75 0.12 350);
+	--color-sakura-600: oklch(0.65 0.11 350);
+	--color-sakura-700: oklch(0.55 0.1 350);
+	--color-sakura-800: oklch(0.45 0.09 350);
+	--color-sakura-900: oklch(0.38 0.08 350);
+
+	--color-washi-50: oklch(0.98 0.01 80);
+	--color-washi-100: oklch(0.95 0.02 80);
+	--color-washi-200: oklch(0.9 0.03 75);
+	--color-washi-300: oklch(0.85 0.04 75);
+	--color-washi-400: oklch(0.78 0.04 75);
+	--color-washi-500: oklch(0.72 0.04 75);
+	--color-washi-600: oklch(0.62 0.03 75);
+	--color-washi-700: oklch(0.52 0.03 75);
+	--color-washi-800: oklch(0.42 0.02 75);
+	--color-washi-900: oklch(0.35 0.02 75);
+
+	--color-torii-50: oklch(0.97 0.02 25);
+	--color-torii-100: oklch(0.93 0.04 25);
+	--color-torii-200: oklch(0.85 0.08 25);
+	--color-torii-300: oklch(0.7 0.15 25);
+	--color-torii-400: oklch(0.65 0.18 25);
+	--color-torii-500: oklch(0.5 0.2 25);
+	--color-torii-600: oklch(0.45 0.2 25);
+	--color-torii-700: oklch(0.38 0.18 25);
+	--color-torii-800: oklch(0.32 0.15 25);
+	--color-torii-900: oklch(0.27 0.12 25);
+
+	--color-night-50: oklch(0.96 0.01 270);
+	--color-night-100: oklch(0.92 0.01 270);
+	--color-night-200: oklch(0.84 0.02 270);
+	--color-night-300: oklch(0.75 0.03 270);
+	--color-night-400: oklch(0.65 0.04 270);
+	--color-night-500: oklch(0.55 0.04 270);
+	--color-night-600: oklch(0.48 0.04 270);
+	--color-night-700: oklch(0.4 0.04 270);
+	--color-night-800: oklch(0.32 0.05 270);
+	--color-night-900: oklch(0.22 0.05 270);
+	--color-night-950: oklch(0.18 0.04 270);
+
+	--color-background: var(--color-night-900);
+	--color-background-secondary: var(--color-night-950);
+	--color-background-tertiary: var(--color-night-800);
+	--color-foreground: oklch(0.92 0.01 270);
+	--color-foreground-muted: oklch(0.72 0.02 270);
+	--color-foreground-subtle: oklch(0.52 0.02 270);
+
+	--color-success: oklch(0.75 0.18 145);
+	--color-warning: oklch(0.8 0.18 85);
+	--color-error: oklch(0.65 0.2 25);
+	--color-info: oklch(0.7 0.15 240);
+
+	--radius-sm: 0.25rem;
+	--radius-md: 0.5rem;
+	--radius-lg: 0.75rem;
+	--radius-xl: 1rem;
+
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+	--shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+	--shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+	--shadow-glow-sakura: 0 0 20px rgba(242, 181, 212, 0.3);
+	--shadow-glow-torii: 0 0 20px rgba(196, 30, 58, 0.3);
+
+	--font-sans: "Inter", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+	*,
+	*::before,
+	*::after {
+		border-color: rgba(242, 181, 212, 0.15);
+	}
+
+	html {
+		color-scheme: dark;
+	}
+
+	body {
+		background-color: var(--color-background);
+		color: var(--color-foreground);
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	::selection {
+		background-color: var(--color-sakura-500);
+		color: var(--color-background);
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-sakura-500);
+		outline-offset: 2px;
+	}
+}
+
+@layer utilities {
+	.glass {
+		background: rgba(36, 36, 66, 0.7);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+	}
+
+	.lantern-top {
+		position: relative;
+	}
+
+	.lantern-top::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: linear-gradient(
+			90deg,
+			transparent,
+			var(--color-sakura-500),
+			transparent
+		);
+	}
+}
+
+@keyframes float-petal {
+	0% {
+		transform: translateY(-10vh) rotate(0deg) translateX(0);
+		opacity: 1;
+	}
+	50% {
+		transform: translateY(50vh) rotate(360deg) translateX(20px);
+	}
+	100% {
+		transform: translateY(110vh) rotate(720deg) translateX(-20px);
+		opacity: 0;
+	}
+}
+
+.sakura-petal {
+	position: fixed;
+	width: 12px;
+	height: 12px;
+	background: radial-gradient(
+		ellipse at 30% 30%,
+		var(--color-sakura-300),
+		var(--color-sakura-500)
+	);
+	border-radius: 100% 0 100% 0;
+	opacity: 0.6;
+	pointer-events: none;
+	z-index: 9999;
+	animation: float-petal 15s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sakura-petal {
+		animation: none;
+		display: none;
+	}
+}

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="backend/src/Mutils.Api/Mutils.Api.csproj" />
+  <Project Path="backend/src/Mutils.Core/Mutils.Core.csproj" />
+  <Project Path="backend/src/Mutils.Infrastructure/Mutils.Infrastructure.csproj" />
+  <Project Path="backend/tests/Mutils.Tests/Mutils.Tests.csproj" />
+</Solution>

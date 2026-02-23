@@ -1,0 +1,125 @@
+export interface User {
+	id: string;
+	discordId: string;
+	username: string;
+	avatarUrl: string | null;
+	createdAt?: string;
+	updatedAt?: string;
+}
+
+export interface Character {
+	id: string;
+	name: string;
+	rank: number | null;
+	claims: number | null;
+	images: number | null;
+	gifs: number | null;
+	seriesCount: number | null;
+	keyType: string | null;
+	keyCount: number | null;
+	kakera: number | null;
+	sp: number | null;
+	imageUrl: string | null;
+	storedImageId: string | null;
+}
+
+export interface CollectionEntry {
+	id: string;
+	character: Character;
+	acquiredAt: string | null;
+	notes: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface PaginatedResponse<T> {
+	items: T[];
+	total: number;
+	page: number;
+	pageSize: number;
+	totalPages: number;
+}
+
+export type ListType = "enable" | "disable";
+
+export interface EnableList {
+	id: string;
+	name: string;
+	content: string;
+	isActive: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface DisableList {
+	id: string;
+	name: string;
+	content: string;
+	isActive: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface ListPreset {
+	id: string;
+	name: string;
+	type: ListType;
+	content: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface AuthResponse {
+	accessToken: string;
+	refreshToken: string;
+	expiresIn: number;
+	user: User;
+}
+
+export interface ImportResponse {
+	imported: number;
+	skipped: number;
+	updated: number;
+	errors: string[];
+	imagesQueued: number;
+}
+
+export interface CollectionStats {
+	totalCharacters: number;
+	totalKakera: number;
+	keyDistribution: Record<string, number>;
+}
+
+export interface OptimizerAnalysis {
+	totalCharacters: number;
+	totalKakera: number;
+	keyDistribution: Record<string, number>;
+	recommendations: OptimizerRecommendation[];
+}
+
+export interface OptimizerRecommendation {
+	type: string;
+	series: string;
+	reason: string;
+	impact: "high" | "medium" | "low";
+}
+
+export interface OptimizerSuggestion {
+	id: string;
+	type: string;
+	characters: string[];
+	reason: string;
+	priority: number;
+}
+
+export interface OptimizerSuggestionsResponse {
+	suggestions: OptimizerSuggestion[];
+}
+
+export interface ApiError {
+	error: {
+		code: string;
+		message: string;
+		details?: Record<string, unknown>;
+	};
+}
