@@ -10,6 +10,8 @@ import type {
 	ImportResponse,
 	CollectionStats,
 	ApiError,
+	KakeraClaim,
+	KakeraStats,
 } from "@/types";
 
 const api = axios.create({
@@ -210,6 +212,22 @@ export const optimizerApi = {
 	getSuggestions: async () => {
 		const { data } = await api.get("/optimizer/suggest");
 		return data;
+	},
+};
+
+export const kakeraApi = {
+	getClaims: async (params?: { from?: string; to?: string }) => {
+		const { data } = await api.get<KakeraClaim[]>("/kakera/claims", { params });
+		return data;
+	},
+
+	getStats: async () => {
+		const { data } = await api.get<KakeraStats>("/kakera/stats");
+		return data;
+	},
+
+	deleteClaim: async (id: string) => {
+		await api.delete(`/kakera/claims/${id}`);
 	},
 };
 

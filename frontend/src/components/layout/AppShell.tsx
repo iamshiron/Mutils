@@ -29,6 +29,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 						>
 							Optimizer
 						</a>
+						<a
+							href="/statistics"
+							className="text-foreground-muted hover:text-foreground transition-colors"
+						>
+							Statistics
+						</a>
 					</nav>
 					<div className="flex items-center gap-4">
 						{user && (

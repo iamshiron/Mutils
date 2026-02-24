@@ -123,3 +123,38 @@ export interface ApiError {
 		details?: Record<string, unknown>;
 	};
 }
+
+export type KakeraType =
+	| "purple"
+	| "blue"
+	| "green"
+	| "yellow"
+	| "orange"
+	| "red"
+	| "rainbow"
+	| "light"
+	| "chaos"
+	| "dark";
+
+export interface KakeraClaim {
+	id: string;
+	userId: string;
+	characterId: string | null;
+	characterName: string | null;
+	type: KakeraType;
+	value: number;
+	isClaimed: boolean;
+	claimedAt: string;
+}
+
+export interface KakeraStats {
+	totalValue: number;
+	totalCount: number;
+	byType: Record<
+		string,
+		{
+			count: number;
+			totalValue: number;
+		}
+	>;
+}
