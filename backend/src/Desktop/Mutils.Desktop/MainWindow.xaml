@@ -5,8 +5,296 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Mutils.Desktop"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Mutils Desktop" Height="700" Width="1100"
+        Background="#121212" Foreground="White"
+        WindowStartupLocation="CenterScreen">
+    
+    <Window.Resources>
+        <!-- Nav Button Style -->
+        <Style x:Key="NavButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#BBB"/>
+            <Setter Property="Padding" Value="25,15"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="0,20,20,0" Margin="0,2,20,2">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#2A2A2A"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
+        <Style x:Key="Header1" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="10"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="#181818">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Margin="0,30,0,30">
+                    <TextBlock Text="MUTILS" FontSize="28" FontWeight="ExtraBold" Foreground="#7289DA" Margin="30,0,0,0"/>
+                    <TextBlock Text="OCR Tracker" FontSize="12" Foreground="#555" Margin="32,-5,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1">
+                    <Button x:Name="DashboardNav" Content="Dashboard" Style="{StaticResource NavButton}" Background="#252525" Foreground="White" Click="OnDashboardClick"/>
+                    <Button x:Name="SettingsNav" Content="Settings" Style="{StaticResource NavButton}" Click="OnSettingsClick"/>
+                </StackPanel>
+
+                <Border Grid.Row="2" Padding="20" Background="#141414">
+                    <StackPanel>
+                        <TextBlock Text="API Status" FontSize="10" Foreground="#666"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                            <Ellipse x:Name="StatusDot" Width="8" Height="8" Fill="#FF5252" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="StatusText" Text="Disconnected" FontSize="12" Foreground="#AAA"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="80"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Top Bar -->
+            <Border Grid.Row="0" BorderBrush="#252525" BorderThickness="0,0,0,1" Padding="30,0">
+                <Grid>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Live Tracker" FontSize="20" FontWeight="Bold"/>
+                        <TextBlock Text="Tracking: #mudae-rolls (Discord)" Foreground="#666" FontSize="12"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Content="Start Capture" Background="#7289DA" BorderThickness="0" Foreground="White" FontWeight="Bold" Margin="0,0,10,0">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Padding" Value="20,8"/>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="Set Capture Area" Background="#333" BorderThickness="0" Foreground="White">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Padding" Value="15,8"/>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Scrollable Content Area -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <!-- Dashboard Content -->
+                    <StackPanel x:Name="DashboardView" Margin="20" Visibility="Visible">
+                        <!-- Top Summary Stats -->
+                        <UniformGrid Columns="3">
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Total Rolls Captured" Foreground="#AAA" FontSize="12"/>
+                                    <TextBlock Text="128" FontSize="32" FontWeight="Bold" Margin="0,5,0,0"/>
+                                    <TextBlock Text="+12 this session" Foreground="#4CAF50" FontSize="10" Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Kakera Buttons Seen" Foreground="#AAA" FontSize="12"/>
+                                    <TextBlock Text="42" FontSize="32" FontWeight="Bold" Margin="0,5,0,0" Foreground="#9C27B0"/>
+                                    <TextBlock Text="3x Purple, 12x Blue" Foreground="#AAA" FontSize="10" Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Claims Logged" Foreground="#AAA" FontSize="12"/>
+                                    <TextBlock Text="14" FontSize="32" FontWeight="Bold" Margin="0,5,0,0" Foreground="#2196F3"/>
+                                    <TextBlock Text="Tracking your Mudae progress" Foreground="#AAA" FontSize="10" Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Recent Activity Section -->
+                        <TextBlock Text="Live Captures" Style="{StaticResource Header1}" Margin="10,20,10,10"/>
+                        <Border Style="{StaticResource Card}" Padding="0">
+                            <StackPanel>
+                                <!-- List Header -->
+                                <Border Background="#252525" Padding="20,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Time" Foreground="#666" FontSize="12"/>
+                                        <TextBlock Grid.Column="1" Text="Character" Foreground="#666" FontSize="12"/>
+                                        <TextBlock Grid.Column="2" Text="Series" Foreground="#666" FontSize="12"/>
+                                        <TextBlock Grid.Column="3" Text="Kakera" Foreground="#666" FontSize="12"/>
+                                        <TextBlock Grid.Column="4" Text="Keys" Foreground="#666" FontSize="12"/>
+                                        <TextBlock Grid.Column="5" Text="Claimed?" Foreground="#666" FontSize="12"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Items -->
+                                <ItemsControl>
+                                    <!-- Item 1 -->
+                                    <Border BorderBrush="#252525" BorderThickness="0,0,0,1" Padding="20,15">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="80"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="14:22:01" VerticalAlignment="Center" Foreground="#AAA"/>
+                                            <TextBlock Grid.Column="1" Text="Rem" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="Re:Zero" Foreground="#AAA" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="3" Text="-" Foreground="#444" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="4" Text="12" Foreground="#AAA" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="5" Text="No" Foreground="#444" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Item 2 -->
+                                    <Border BorderBrush="#252525" BorderThickness="0,0,0,1" Padding="20,15">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="80"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="14:21:45" VerticalAlignment="Center" Foreground="#AAA"/>
+                                            <TextBlock Grid.Column="1" Text="Megumin" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="Konosuba" Foreground="#AAA" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="3" Background="#4A148C" Padding="6,2" CornerRadius="4" HorizontalAlignment="Left">
+                                                <TextBlock Text="Purple" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="4" Text="5" Foreground="#AAA" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="5" Text="Yes" Foreground="#4CAF50" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Item 3 -->
+                                    <Border Padding="20,15">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="80"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="14:20:12" VerticalAlignment="Center" Foreground="#AAA"/>
+                                            <TextBlock Grid.Column="1" Text="Chisa Kotegawa" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="Grand Blue" Foreground="#AAA" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="3" Background="#0D47A1" Padding="6,2" CornerRadius="4" HorizontalAlignment="Left">
+                                                <TextBlock Text="Blue" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="4" Text="1" Foreground="#AAA" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="5" Text="Yes" Foreground="#4CAF50" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </ItemsControl>
+                                
+                                <Button Content="View Full History" Background="Transparent" Foreground="#7289DA" BorderThickness="0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Settings Content -->
+                    <StackPanel x:Name="SettingsView" Margin="40" Visibility="Collapsed">
+                        <TextBlock Text="Settings" Style="{StaticResource Header1}" Margin="0,0,0,30"/>
+                        
+                        <Border Style="{StaticResource Card}" Width="500" HorizontalAlignment="Left" Margin="0">
+                            <StackPanel>
+                                <TextBlock Text="API Server Configuration" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                                
+                                <TextBlock Text="Server Base URL" Foreground="#AAA" Margin="0,0,0,8"/>
+                                <TextBox x:Name="ApiUrlTextBox" 
+                                         Background="#252525" 
+                                         Foreground="White" 
+                                         BorderThickness="1" 
+                                         BorderBrush="#444" 
+                                         Padding="10,8" 
+                                         Margin="0,0,0,20"
+                                         Text="http://localhost:5000"/>
+                                
+                                <TextBlock Text="Status" Foreground="#AAA" Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,30">
+                                    <Ellipse x:Name="SettingsStatusDot" Width="8" Height="8" Fill="#FF5252" Margin="0,0,8,0"/>
+                                    <TextBlock x:Name="SettingsStatusText" Text="Disconnected from API" FontSize="12" Foreground="#AAA"/>
+                                </StackPanel>
+                                
+                                <Button Content="Save Settings" 
+                                        Click="OnSaveSettingsClick"
+                                        Background="#7289DA" 
+                                        Foreground="White" 
+                                        BorderThickness="0" 
+                                        Padding="20,10" 
+                                        FontWeight="Bold"
+                                        HorizontalAlignment="Left">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Window>
