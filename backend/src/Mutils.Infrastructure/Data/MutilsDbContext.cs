@@ -18,6 +18,7 @@ public class MutilsDbContext : DbContext {
     public DbSet<Series> Series => Set<Series>();
     public DbSet<BundleCharacterEntry> BundleCharacterEntries => Set<BundleCharacterEntry>();
     public DbSet<BundleSeriesEntry> BundleSeriesEntries => Set<BundleSeriesEntry>();
+    public DbSet<KakeraClaim> KakeraClaims => Set<KakeraClaim>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.Entity<User>(entity => {
@@ -139,6 +140,24 @@ public class MutilsDbContext : DbContext {
                 .WithMany()
                 .HasForeignKey(e => e.CharacterId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<KakeraClaim>(entity => {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.CharacterId);
+            entity.HasIndex(e => e.ClaimedAt);
+            entity.HasIndex(e => e.Type);
+            
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            entity.HasOne(e => e.Character)
+                .WithMany()
+                .HasForeignKey(e => e.CharacterId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 

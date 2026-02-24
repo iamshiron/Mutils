@@ -91,6 +91,7 @@ app.MapCollectionEndpoints();
 app.MapListEndpoints();
 app.MapOptimizerEndpoints();
 app.MapUserEndpoints();
+app.MapKakeraEndpoints();
 
 using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<MutilsDbContext>();
