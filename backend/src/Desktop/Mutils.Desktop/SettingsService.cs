@@ -1,10 +1,14 @@
 using System.IO;
 using System.Text.Json;
+using Mutils.Core.DTOs;
 
 namespace Mutils.Desktop;
 
 public class AppSettings {
     public string ApiBaseUrl { get; set; } = "http://localhost:5000";
+    public string? AccessToken { get; set; }
+    public string? RefreshToken { get; set; }
+    public UserDto? User { get; set; }
 }
 
 public class SettingsService {
@@ -24,12 +28,14 @@ public class SettingsService {
         try {
             if (File.Exists(SettingsPath)) {
                 var json = File.ReadAllText(SettingsPath);
-                return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                Current = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                return Current;
             }
         } catch {
             // Fallback to default
         }
-        return new AppSettings();
+        Current = new AppSettings();
+        return Current;
     }
 
     public void Save(AppSettings settings) {

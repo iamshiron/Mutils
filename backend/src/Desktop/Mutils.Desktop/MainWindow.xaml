@@ -49,6 +49,9 @@
     </Window.Resources>
 
     <Grid>
+        <Grid.LayoutTransform>
+            <ScaleTransform ScaleX="1.25" ScaleY="1.25"/>
+        </Grid.LayoutTransform>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="220"/>
             <ColumnDefinition Width="*"/>
@@ -70,11 +73,28 @@
 
                 <StackPanel Grid.Row="1">
                     <Button x:Name="DashboardNav" Content="Dashboard" Style="{StaticResource NavButton}" Background="#252525" Foreground="White" Click="OnDashboardClick"/>
+                    <Button x:Name="CollectionNav" Content="Collection" Style="{StaticResource NavButton}" Click="OnCollectionClick"/>
                     <Button x:Name="SettingsNav" Content="Settings" Style="{StaticResource NavButton}" Click="OnSettingsClick"/>
                 </StackPanel>
 
                 <Border Grid.Row="2" Padding="20" Background="#141414">
                     <StackPanel>
+                        <TextBlock x:Name="UserStatusText" Text="Not Logged In" FontSize="10" Foreground="#666" Margin="0,0,0,10"/>
+                        <Button x:Name="LoginButton" Content="Login with Discord" Click="OnLoginClick" Background="#7289DA" Foreground="White" Padding="10,5" FontSize="11" FontWeight="Bold" BorderThickness="0" Visibility="Visible">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        <Button x:Name="LogoutButton" Content="Logout" Click="OnLogoutClick" Background="#333" Foreground="White" Padding="10,5" FontSize="11" BorderThickness="0" Visibility="Collapsed">
+                             <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        <Separator Background="#222" Margin="0,15"/>
                         <TextBlock Text="API Status" FontSize="10" Foreground="#666"/>
                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                             <Ellipse x:Name="StatusDot" Width="8" Height="8" Fill="#FF5252" Margin="0,0,8,0"/>
@@ -248,6 +268,111 @@
                                 <Button Content="View Full History" Background="Transparent" Foreground="#7289DA" BorderThickness="0"/>
                             </StackPanel>
                         </Border>
+                    </StackPanel>
+
+                    <!-- Collection Content -->
+                    <StackPanel x:Name="CollectionView" Margin="20" Visibility="Collapsed">
+                        <Grid Margin="0,0,0,20">
+                            <TextBlock Text="My Collection" Style="{StaticResource Header1}"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBox x:Name="CollectionSearchTextBox" Width="200" Padding="8,4" Margin="0,0,10,0" Background="#1E1E1E" Foreground="White" BorderBrush="#333" BorderThickness="1"/>
+                                <Button Content="Refresh" Click="OnRefreshCollectionClick" Padding="15,5" Background="#333" Foreground="White" BorderThickness="0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border x:Name="LoginRequiredOverlay" Style="{StaticResource Card}" Visibility="Visible">
+                            <StackPanel HorizontalAlignment="Center" Margin="50">
+                                <TextBlock Text="Login Required" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Please login with Discord to view your collection." Foreground="#AAA" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+                                <Button Content="Login with Discord" Click="OnLoginClick" Padding="20,10" Background="#7289DA" Foreground="White" FontWeight="Bold" BorderThickness="0" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <ListView x:Name="CollectionListView" 
+                                  Background="Transparent" 
+                                  BorderThickness="0" 
+                                  Foreground="White" 
+                                  Visibility="Collapsed"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#252525" BorderThickness="0,0,0,1" Padding="15,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="50"/> <!-- Image -->
+                                                <ColumnDefinition Width="2*"/> <!-- Name/Series -->
+                                                <ColumnDefinition Width="80"/> <!-- Rank -->
+                                                <ColumnDefinition Width="100"/> <!-- Kakera -->
+                                                <ColumnDefinition Width="80"/> <!-- Keys -->
+                                                <ColumnDefinition Width="100"/> <!-- Date -->
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Image -->
+                                            <Border Grid.Column="0" Width="40" Height="40" CornerRadius="4" ClipToBounds="True" Background="#252525">
+                                                <Image Source="{Binding Character.ImageUrl}" Stretch="UniformToFill"/>
+                                            </Border>
+
+                                            <!-- Name & Series -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0">
+                                                <TextBlock Text="{Binding Character.Name}" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Text="Mudae Collection" Foreground="#666" FontSize="11"/>
+                                            </StackPanel>
+
+                                            <!-- Rank -->
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                <TextBlock Text="RANK" FontSize="9" Foreground="#555" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Character.Rank, TargetNullValue='?'}" Foreground="#AAA"/>
+                                            </StackPanel>
+
+                                            <!-- Kakera -->
+                                            <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                                                <TextBlock Text="KAKERA" FontSize="9" Foreground="#555" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Character.Kakera, StringFormat={}{0:N0} ka}" Foreground="#9C27B0" FontWeight="SemiBold"/>
+                                            </StackPanel>
+
+                                            <!-- Keys -->
+                                            <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                                                <TextBlock Text="KEYS" FontSize="9" Foreground="#555" FontWeight="Bold"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Character.KeyCount, TargetNullValue='0'}" Foreground="#FFD700"/>
+                                                    <TextBlock Text=" ★" Foreground="#444" FontSize="10" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Date -->
+                                            <StackPanel Grid.Column="5" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                <TextBlock Text="ACQUIRED" FontSize="9" Foreground="#555" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                                <TextBlock Text="{Binding AcquiredAt, StringFormat=MMM dd\, yyyy}" Foreground="#666" FontSize="11" HorizontalAlignment="Right"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListViewItem">
+                                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                                                    <ContentPresenter />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1A1A1A"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#222"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
                     </StackPanel>
 
                     <!-- Settings Content -->
