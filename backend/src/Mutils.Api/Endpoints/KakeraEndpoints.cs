@@ -36,6 +36,7 @@ public static class KakeraEndpoints {
                         c.Character != null ? c.Character.Name : null,
                         c.Type,
                         c.Value,
+                        c.IsClaimed,
                         c.ClaimedAt
                     ))
                     .ToListAsync();
@@ -64,6 +65,7 @@ public static class KakeraEndpoints {
                     CharacterId = characterId,
                     Type = request.Type,
                     Value = request.Value,
+                    IsClaimed = request.IsClaimed,
                     ClaimedAt = request.ClaimedAt ?? DateTime.UtcNow
                 };
 
@@ -74,9 +76,10 @@ public static class KakeraEndpoints {
                     claim.Id,
                     claim.UserId,
                     claim.CharacterId,
-                    request.CharacterName, // Use requested name if character not found/linked
+                    request.CharacterName,
                     claim.Type,
                     claim.Value,
+                    claim.IsClaimed,
                     claim.ClaimedAt
                 ));
             });
@@ -105,6 +108,24 @@ public static class KakeraEndpoints {
                 };
 
                 return Results.Ok(stats);
+            });
+
+        group.MapDelete("/claims/{id}", async (
+            Guid id,
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var claim = await db.KakeraClaims
+                    .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+
+                if (claim is null) return Results.NotFound();
+
+                db.KakeraClaims.Remove(claim);
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
             });
     }
 

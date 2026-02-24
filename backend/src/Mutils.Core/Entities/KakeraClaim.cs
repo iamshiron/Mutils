@@ -22,5 +22,6 @@ public class KakeraClaim : BaseEntity {
     
     public KakeraType Type { get; set; }
     public int Value { get; set; }
+    public bool IsClaimed { get; set; }
     public DateTime ClaimedAt { get; set; } = DateTime.UtcNow;
 }

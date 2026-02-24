@@ -1,6 +1,8 @@
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Mutils.Core.DTOs;
+using Mutils.Core.Entities;
 
 namespace Mutils.Desktop;
 
@@ -22,6 +25,7 @@ public partial class MainWindow : Window {
     private readonly SettingsService _settingsService;
     private readonly DesktopAuthService _authService;
     private readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+    private CancellationTokenSource? _searchCts;
 
     public MainWindow() {
         InitializeComponent();
@@ -66,13 +70,30 @@ public partial class MainWindow : Window {
         UpdateUserUI();
     }
 
+    private async void OnCollectionSearchChanged(object sender, TextChangedEventArgs e) {
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        try {
+            await Task.Delay(300, token);
+            await LoadCollectionAsync();
+        } catch (OperationCanceledException) { }
+    }
+
     private async Task LoadCollectionAsync() {
         if (_settingsService.Current.AccessToken == null) return;
 
         var baseUrl = _settingsService.Current.ApiBaseUrl.TrimEnd('/');
+        var search = CollectionSearchTextBox.Text;
         try {
-            using var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/api/collection?pageSize=100");
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _settingsService.Current.AccessToken);
+            var url = $"{baseUrl}/api/collection?pageSize=100";
+            if (!string.IsNullOrEmpty(search)) {
+                url += $"&search={Uri.EscapeDataString(search)}";
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settingsService.Current.AccessToken);
             
             var response = await _httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode) {
@@ -81,7 +102,7 @@ public partial class MainWindow : Window {
                     CollectionListView.ItemsSource = data.Items;
                 }
             }
-        } catch (Exception ex) {
+        } catch (Exception) {
             // Log error
         }
     }
@@ -93,19 +114,127 @@ public partial class MainWindow : Window {
     private void OnCollectionClick(object sender, RoutedEventArgs e) {
         DashboardView.Visibility = Visibility.Collapsed;
         CollectionView.Visibility = Visibility.Visible;
+        HistoryView.Visibility = Visibility.Collapsed;
         SettingsView.Visibility = Visibility.Collapsed;
 
         SetActiveNav(CollectionNav);
         _ = LoadCollectionAsync();
     }
 
+    private void OnHistoryClick(object sender, RoutedEventArgs e) {
+        DashboardView.Visibility = Visibility.Collapsed;
+        CollectionView.Visibility = Visibility.Collapsed;
+        HistoryView.Visibility = Visibility.Visible;
+        SettingsView.Visibility = Visibility.Collapsed;
+
+        SetActiveNav(HistoryNav);
+        _ = LoadHistoryAsync();
+    }
+
+    private async Task LoadHistoryAsync() {
+        if (_settingsService.Current.AccessToken == null) return;
+
+        var baseUrl = _settingsService.Current.ApiBaseUrl.TrimEnd('/');
+        try {
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/api/kakera/claims");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settingsService.Current.AccessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode) {
+                var items = await response.Content.ReadFromJsonAsync<List<KakeraClaimDto>>();
+                if (items != null) {
+                    HistoryListView.ItemsSource = items;
+                }
+            }
+        } catch (Exception ex) {
+            // Log error
+        }
+    }
+
+    private void OnShowAddKakeraClick(object sender, RoutedEventArgs e) {
+        ModalOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void OnCancelAddKakeraClick(object sender, RoutedEventArgs e) {
+        ModalOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private async void OnSaveKakeraClaimClick(object sender, RoutedEventArgs e) {
+        if (_settingsService.Current.AccessToken == null) {
+            MessageBox.Show("Please login first.");
+            return;
+        }
+
+        if (KakeraTypeComboBox.SelectedItem is not ComboBoxItem selectedType) return;
+        if (!int.TryParse(ClaimValueTextBox.Text, out int value)) {
+            MessageBox.Show("Invalid value.");
+            return;
+        }
+
+        var typeStr = selectedType.Content.ToString();
+        if (!Enum.TryParse<KakeraType>(typeStr, out var type)) return;
+
+        var claimRequest = new CreateKakeraClaimRequest(
+            CharacterId: null,
+            CharacterName: ClaimCharacterTextBox.Text,
+            Type: type,
+            Value: value,
+            IsClaimed: IsClaimedCheckBox.IsChecked ?? false,
+            ClaimedAt: DateTime.UtcNow
+        );
+
+        var baseUrl = _settingsService.Current.ApiBaseUrl.TrimEnd('/');
+        try {
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/api/kakera/claims");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settingsService.Current.AccessToken);
+            request.Content = JsonContent.Create(claimRequest);
+
+            var response = await _httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode) {
+                ModalOverlay.Visibility = Visibility.Collapsed;
+                ClaimCharacterTextBox.Text = "";
+                await LoadHistoryAsync();
+            } else {
+                var error = await response.Content.ReadAsStringAsync();
+                MessageBox.Show($"Failed to save claim: {error}");
+            }
+        } catch (Exception ex) {
+            MessageBox.Show($"Error: {ex.Message}");
+        }
+    }
+
+    private async void OnDeleteKakeraClaimClick(object sender, RoutedEventArgs e) {
+        if (sender is not Button button || button.Tag is not Guid claimId) return;
+
+        if (MessageBox.Show("Delete this claim?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+
+        var baseUrl = _settingsService.Current.ApiBaseUrl.TrimEnd('/');
+        try {
+            using var request = new HttpRequestMessage(HttpMethod.Delete, $"{baseUrl}/api/kakera/claims/{claimId}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settingsService.Current.AccessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode) {
+                await LoadHistoryAsync();
+            } else {
+                var error = await response.Content.ReadAsStringAsync();
+                MessageBox.Show($"Failed to delete: {error}");
+            }
+        } catch (Exception ex) {
+            MessageBox.Show($"Error: {ex.Message}");
+        }
+    }
+
     private void SetActiveNav(Button active) {
         DashboardNav.Background = Brushes.Transparent;
         CollectionNav.Background = Brushes.Transparent;
+        HistoryNav.Background = Brushes.Transparent;
         SettingsNav.Background = Brushes.Transparent;
         
         DashboardNav.Foreground = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#BBB"));
         CollectionNav.Foreground = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#BBB"));
+        HistoryNav.Foreground = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#BBB"));
         SettingsNav.Foreground = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#BBB"));
 
         active.Background = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#252525"));
@@ -115,6 +244,7 @@ public partial class MainWindow : Window {
     private void OnDashboardClick(object sender, RoutedEventArgs e) {
         DashboardView.Visibility = Visibility.Visible;
         CollectionView.Visibility = Visibility.Collapsed;
+        HistoryView.Visibility = Visibility.Collapsed;
         SettingsView.Visibility = Visibility.Collapsed;
         SetActiveNav(DashboardNav);
     }

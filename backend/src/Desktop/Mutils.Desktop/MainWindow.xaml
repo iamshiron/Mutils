@@ -10,6 +10,8 @@
         WindowStartupLocation="CenterScreen">
     
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
         <!-- Nav Button Style -->
         <Style x:Key="NavButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -74,6 +76,7 @@
                 <StackPanel Grid.Row="1">
                     <Button x:Name="DashboardNav" Content="Dashboard" Style="{StaticResource NavButton}" Background="#252525" Foreground="White" Click="OnDashboardClick"/>
                     <Button x:Name="CollectionNav" Content="Collection" Style="{StaticResource NavButton}" Click="OnCollectionClick"/>
+                    <Button x:Name="HistoryNav" Content="History" Style="{StaticResource NavButton}" Click="OnHistoryClick"/>
                     <Button x:Name="SettingsNav" Content="Settings" Style="{StaticResource NavButton}" Click="OnSettingsClick"/>
                 </StackPanel>
 
@@ -275,7 +278,7 @@
                         <Grid Margin="0,0,0,20">
                             <TextBlock Text="My Collection" Style="{StaticResource Header1}"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBox x:Name="CollectionSearchTextBox" Width="200" Padding="8,4" Margin="0,0,10,0" Background="#1E1E1E" Foreground="White" BorderBrush="#333" BorderThickness="1"/>
+                                <TextBox x:Name="CollectionSearchTextBox" TextChanged="OnCollectionSearchChanged" Width="200" Padding="8,4" Margin="0,0,10,0" Background="#1E1E1E" Foreground="White" BorderBrush="#333" BorderThickness="1"/>
                                 <Button Content="Refresh" Click="OnRefreshCollectionClick" Padding="15,5" Background="#333" Foreground="White" BorderThickness="0"/>
                             </StackPanel>
                         </Grid>
@@ -375,6 +378,73 @@
                         </ListView>
                     </StackPanel>
 
+                    <!-- History Content -->
+                    <StackPanel x:Name="HistoryView" Margin="20" Visibility="Collapsed">
+                        <Grid Margin="0,0,0,20">
+                            <TextBlock Text="Capture &amp; Claim History" Style="{StaticResource Header1}"/>
+                            <Button Content="+ Log Kakera Claim" Click="OnShowAddKakeraClick" Padding="15,5" Background="#7289DA" Foreground="White" FontWeight="Bold" HorizontalAlignment="Right" BorderThickness="0">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="4"/>
+                                    </Style>
+                                </Button.Resources>
+                            </Button>
+                        </Grid>
+
+                        <ListView x:Name="HistoryListView" Background="Transparent" BorderThickness="0" Foreground="White">
+                             <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#252525" BorderThickness="0,0,0,1" Padding="15,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/> <!-- Time -->
+                                                <ColumnDefinition Width="*"/> <!-- Event -->
+                                                <ColumnDefinition Width="100"/> <!-- Details -->
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="{Binding ClaimedAt, StringFormat=t}" Foreground="#666" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0">
+                                                <TextBlock Text="{Binding CharacterName}" FontWeight="Bold"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="Manual Kakera Log" FontSize="11" Foreground="#444"/>
+                                                    <TextBlock Text=" • " FontSize="11" Foreground="#333"/>
+                                                    <TextBlock Text="Claimed" FontSize="11" Foreground="#4CAF50" Visibility="{Binding IsClaimed, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    <TextBlock Text="Missed" FontSize="11" Foreground="#FF5252">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsClaimed}" Value="False">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <Border Grid.Column="2" Background="#2A2A2A" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,35,0">
+                                                <TextBlock Text="{Binding Type}" FontSize="10" FontWeight="Bold" Foreground="#9C27B0"/>
+                                            </Border>
+
+                                            <Button Grid.Column="2" Content="✕" Click="OnDeleteKakeraClaimClick" Tag="{Binding Id}" Background="Transparent" Foreground="#444" BorderThickness="0" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="5">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Foreground" Value="Red"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+
                     <!-- Settings Content -->
                     <StackPanel x:Name="SettingsView" Margin="40" Visibility="Collapsed">
                         <TextBlock Text="Settings" Style="{StaticResource Header1}" Margin="0,0,0,30"/>
@@ -420,6 +490,86 @@
                     </StackPanel>
                 </Grid>
             </ScrollViewer>
+        </Grid>
+
+        <!-- Modals/Overlays -->
+        <Grid x:Name="ModalOverlay" Visibility="Collapsed" Background="#CC000000" Grid.ColumnSpan="2">
+            <Border Style="{StaticResource Card}" Width="400" VerticalAlignment="Center" HorizontalAlignment="Center" BorderBrush="#333" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="Log Kakera Claim" Style="{StaticResource Header1}" Margin="0,0,0,20"/>
+
+                    <TextBlock Text="Character Name" Foreground="#AAA" Margin="0,0,0,5"/>
+                    <TextBox x:Name="ClaimCharacterTextBox" Background="#252525" Foreground="White" Padding="8,4" Margin="0,0,0,15" BorderBrush="#444"/>
+
+                    <TextBlock Text="Kakera Type" Foreground="#AAA" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="KakeraTypeComboBox" Background="#252525" Foreground="White" Padding="8,4" Margin="0,0,0,15" BorderBrush="#444" BorderThickness="1">
+                        <ComboBox.Resources>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Background" Value="#252525"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#333"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#7289DA"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ComboBox.Resources>
+                        <ComboBoxItem Content="Purple"/>
+                        <ComboBoxItem Content="Blue"/>
+                        <ComboBoxItem Content="Green"/>
+                        <ComboBoxItem Content="Yellow"/>
+                        <ComboBoxItem Content="Orange"/>
+                        <ComboBoxItem Content="Red"/>
+                        <ComboBoxItem Content="Rainbow"/>
+                        <ComboBoxItem Content="Light"/>
+                        <ComboBoxItem Content="Chaos"/>
+                        <ComboBoxItem Content="Dark"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Value" Foreground="#AAA" Margin="0,0,0,5"/>
+                    <TextBox x:Name="ClaimValueTextBox" Text="120" Background="#252525" Foreground="White" Padding="8,4" Margin="0,0,0,15" BorderBrush="#444"/>
+
+                    <CheckBox x:Name="IsClaimedCheckBox" Content="Claimed?" IsChecked="True" Foreground="White" Margin="0,0,0,25">
+                        <CheckBox.Style>
+                            <Style TargetType="CheckBox">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="CheckBox">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border x:Name="border" Width="18" Height="18" Background="#252525" BorderBrush="#444" BorderThickness="1" CornerRadius="3">
+                                                    <TextBlock x:Name="check" Text="✓" Foreground="#7289DA" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                                                </Border>
+                                                <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#7289DA"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </CheckBox.Style>
+                    </CheckBox>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel" Click="OnCancelAddKakeraClick" Padding="15,8" Background="Transparent" Foreground="#AAA" BorderThickness="0" Margin="0,0,10,0"/>
+                        <Button Content="Save Claim" Click="OnSaveKakeraClaimClick" Padding="20,8" Background="#7289DA" Foreground="White" FontWeight="Bold" BorderThickness="0">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="4"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </Grid>
     </Grid>
 </Window>

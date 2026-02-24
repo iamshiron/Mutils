@@ -9,6 +9,7 @@ public record KakeraClaimDto(
     string? CharacterName,
     KakeraType Type,
     int Value,
+    bool IsClaimed,
     DateTime ClaimedAt
 );
 
@@ -17,5 +18,6 @@ public record CreateKakeraClaimRequest(
     string? CharacterName,
     KakeraType Type,
     int Value,
+    bool IsClaimed,
     DateTime? ClaimedAt
 );
