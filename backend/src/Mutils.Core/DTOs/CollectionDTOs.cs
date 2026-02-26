@@ -20,7 +20,14 @@ public sealed record CharacterDto(
     int? Kakera,
     int? Sp,
     string? ImageUrl,
-    Guid? StoredImageId
+    Guid? StoredImageId,
+    CharacterKakeraStatsDto? KakeraStats = null
+);
+
+public sealed record CharacterKakeraStatsDto(
+    int TotalValue,
+    int TotalCount,
+    Dictionary<string, int> ByType
 );
 
 public sealed record PaginatedResponse<T>(

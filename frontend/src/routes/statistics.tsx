@@ -1,44 +1,44 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import {
+	Calendar,
+	ChartBar,
+	ChartPie,
+	Clock,
+	ListNumbers,
+	Target,
+	TrendUp,
+} from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { format, isAfter, parseISO, startOfDay, subDays } from "date-fns";
+import { useState } from "react";
+import {
+	Area,
+	AreaChart,
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Cell,
+	Line,
+	LineChart,
+	Pie,
+	PieChart,
+	ResponsiveContainer,
+	Tooltip,
 	XAxis,
 	YAxis,
-	CartesianGrid,
-	Tooltip,
-	ResponsiveContainer,
-	LineChart,
-	Line,
-	PieChart,
-	Pie,
-	Cell,
-	AreaChart,
-	Area,
 } from "recharts";
-import { format, parseISO, subDays } from "date-fns";
-import { kakeraApi } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { TrendUp, ChartBar, ChartPie, Calendar } from "@phosphor-icons/react";
+import { kakeraApi } from "@/lib/api";
+import { KAKERA_COLORS } from "@/lib/constants";
 import type { KakeraType } from "@/types";
 
 export const Route = createFileRoute("/statistics")({
 	component: StatisticsPage,
 });
 
-const KAKERA_COLORS: Record<KakeraType, string> = {
-	purple: "#a855f7",
-	blue: "#3b82f6",
-	green: "#22c55e",
-	yellow: "#eab308",
-	orange: "#f97316",
-	red: "#ef4444",
-	rainbow: "#ec4899", // Using pink for rainbow
-	light: "#f8fafc",
-	chaos: "#6366f1",
-	dark: "#1e293b",
-};
-
 function StatisticsPage() {
 	const { isAuthenticated } = useAuth();
+	const [pieChartMode, setPieChartMode] = useState<"value" | "count">("value");
 
 	const { data: claims, isLoading: claimsLoading } = useQuery({
 		queryKey: ["kakera-claims"],
@@ -69,8 +69,9 @@ function StatisticsPage() {
 	}
 
 	// Process data for charts
+	const now = new Date();
 	const last30Days = Array.from({ length: 30 }, (_, i) => {
-		const date = subDays(new Date(), i);
+		const date = subDays(now, i);
 		return format(date, "yyyy-MM-dd");
 	}).reverse();
 
@@ -85,14 +86,27 @@ function StatisticsPage() {
 		};
 	});
 
+	const sevenDaysAgo = startOfDay(subDays(now, 7));
+	const last7DaysClaims = claims.filter((c) =>
+		isAfter(parseISO(c.claimedAt), sevenDaysAgo),
+	);
+	const last7DaysTotal = last7DaysClaims.reduce((sum, c) => sum + c.value, 0);
+
+	const avgPerClaim =
+		stats.totalCount > 0 ? stats.totalValue / stats.totalCount : 0;
+	const dailyAvg = dailyData.reduce((sum, d) => sum + d.value, 0) / 30;
+
 	const getKakeraColor = (type: string | number) => {
 		const typeStr = String(type).toLowerCase();
 		return KAKERA_COLORS[typeStr as KakeraType] || "#ffffff";
 	};
 
 	const pieData = Object.entries(stats.byType).map(([type, data]) => ({
-		name: String(type).charAt(0).toUpperCase() + String(type).slice(1).toLowerCase(),
+		name:
+			String(type).charAt(0).toUpperCase() +
+			String(type).slice(1).toLowerCase(),
 		value: data.totalValue,
+		count: data.count,
 		type: String(type).toLowerCase() as KakeraType,
 	}));
 
@@ -104,6 +118,19 @@ function StatisticsPage() {
 		});
 		return acc;
 	}, []);
+
+	// Day of week activity
+	const dowNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+	const dowData = dowNames.map((name, i) => {
+		const dayClaims = claims.filter(
+			(c) => parseISO(c.claimedAt).getDay() === i,
+		);
+		return {
+			name,
+			count: dayClaims.length,
+			value: dayClaims.reduce((sum, c) => sum + c.value, 0),
+		};
+	});
 
 	return (
 		<div className="space-y-8">
@@ -131,24 +158,66 @@ function StatisticsPage() {
 						<ChartBar size={20} className="text-blue-400" />
 						<span className="text-foreground-muted text-sm">Total Claims</span>
 					</div>
-					<p className="text-3xl font-bold text-blue-400">{stats.totalCount}</p>
-				</div>
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<Calendar size={20} className="text-green-400" />
-						<span className="text-foreground-muted text-sm">Avg. Daily</span>
-					</div>
-					<p className="text-3xl font-bold text-green-400">
-						{Math.round(stats.totalValue / (claims.length || 1)).toLocaleString()}
+					<p className="text-3xl font-bold text-blue-400">
+						{stats.totalCount.toLocaleString()}
 					</p>
 				</div>
 				<div className="glass rounded-xl p-6 lantern-top">
 					<div className="flex items-center gap-3 mb-2">
-						<TrendUp size={20} className="text-sakura-300" />
+						<ListNumbers size={20} className="text-green-400" />
+						<span className="text-foreground-muted text-sm">
+							Avg. per Claim
+						</span>
+					</div>
+					<p className="text-3xl font-bold text-green-400">
+						{Math.round(avgPerClaim).toLocaleString()}
+					</p>
+				</div>
+				<div className="glass rounded-xl p-6 lantern-top">
+					<div className="flex items-center gap-3 mb-2">
+						<Target size={20} className="text-sakura-300" />
 						<span className="text-foreground-muted text-sm">Best Claim</span>
 					</div>
 					<p className="text-3xl font-bold text-sakura-300">
 						{Math.max(...claims.map((c) => c.value), 0).toLocaleString()}
+					</p>
+				</div>
+				<div className="glass rounded-xl p-6 lantern-top">
+					<div className="flex items-center gap-3 mb-2">
+						<Calendar size={20} className="text-indigo-400" />
+						<span className="text-foreground-muted text-sm">Last 7 Days</span>
+					</div>
+					<p className="text-3xl font-bold text-indigo-400">
+						{last7DaysTotal.toLocaleString()}
+					</p>
+				</div>
+				<div className="glass rounded-xl p-6 lantern-top">
+					<div className="flex items-center gap-3 mb-2">
+						<TrendUp size={20} className="text-emerald-400" />
+						<span className="text-foreground-muted text-sm">Daily Average</span>
+					</div>
+					<p className="text-3xl font-bold text-emerald-400">
+						{Math.round(dailyAvg).toLocaleString()}
+					</p>
+				</div>
+				<div className="glass rounded-xl p-6 lantern-top">
+					<div className="flex items-center gap-3 mb-2">
+						<ChartBar size={20} className="text-amber-400" />
+						<span className="text-foreground-muted text-sm">Monthly Est.</span>
+					</div>
+					<p className="text-3xl font-bold text-amber-400">
+						{Math.round(dailyAvg * 30).toLocaleString()}
+					</p>
+				</div>
+				<div className="glass rounded-xl p-6 lantern-top">
+					<div className="flex items-center gap-3 mb-2">
+						<Clock size={20} className="text-rose-400" />
+						<span className="text-foreground-muted text-sm">Success Rate</span>
+					</div>
+					<p className="text-3xl font-bold text-rose-400">
+						{claims.length > 0
+							? `${Math.round((claims.filter((c) => c.isClaimed).length / claims.length) * 100)}%`
+							: "0%"}
 					</p>
 				</div>
 			</div>
@@ -206,9 +275,35 @@ function StatisticsPage() {
 				</div>
 
 				<div className="glass rounded-xl p-6">
-					<h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-						<ChartPie size={20} /> Value Distribution by Type
-					</h2>
+					<div className="flex items-center justify-between mb-6">
+						<h2 className="text-lg font-semibold flex items-center gap-2">
+							<ChartPie size={20} /> Distribution by Type
+						</h2>
+						<div className="flex gap-1 bg-background-tertiary rounded-lg p-1">
+							<button
+								type="button"
+								onClick={() => setPieChartMode("value")}
+								className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+									pieChartMode === "value"
+										? "bg-sakura-500 text-white"
+										: "text-foreground-muted hover:text-foreground"
+								}`}
+							>
+								By Value
+							</button>
+							<button
+								type="button"
+								onClick={() => setPieChartMode("count")}
+								className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+									pieChartMode === "count"
+										? "bg-sakura-500 text-white"
+										: "text-foreground-muted hover:text-foreground"
+								}`}
+							>
+								By Count
+							</button>
+						</div>
+					</div>
 					<div className="h-[300px] w-full">
 						<ResponsiveContainer width="100%" height="100%">
 							<PieChart>
@@ -219,13 +314,10 @@ function StatisticsPage() {
 									innerRadius={60}
 									outerRadius={100}
 									paddingAngle={5}
-									dataKey="value"
+									dataKey={pieChartMode === "value" ? "value" : "count"}
 								>
-									{pieData.map((entry, index) => (
-										<Cell
-											key={`cell-${index}`}
-											fill={getKakeraColor(entry.type)}
-										/>
+									{pieData.map((entry) => (
+										<Cell key={entry.type} fill={getKakeraColor(entry.type)} />
 									))}
 								</Pie>
 								<Tooltip
@@ -234,6 +326,12 @@ function StatisticsPage() {
 										border: "1px solid rgba(242, 181, 212, 0.2)",
 										borderRadius: "8px",
 									}}
+									formatter={(value, _name, props) => [
+										pieChartMode === "value"
+											? Number(value).toLocaleString()
+											: value,
+										props.payload.name,
+									]}
 								/>
 							</PieChart>
 						</ResponsiveContainer>
@@ -252,6 +350,90 @@ function StatisticsPage() {
 								</span>
 							</div>
 						))}
+					</div>
+				</div>
+
+				<div className="glass rounded-xl p-6">
+					<h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+						<ChartBar size={20} /> Claims per Day (Last 30 Days)
+					</h2>
+					<div className="h-[300px] w-full">
+						<ResponsiveContainer width="100%" height="100%">
+							<BarChart data={dailyData}>
+								<CartesianGrid
+									strokeDasharray="3 3"
+									stroke="rgba(255,255,255,0.05)"
+								/>
+								<XAxis
+									dataKey="date"
+									stroke="rgba(255,255,255,0.5)"
+									fontSize={10}
+									tickLine={false}
+									axisLine={false}
+								/>
+								<YAxis
+									stroke="rgba(255,255,255,0.5)"
+									fontSize={12}
+									tickLine={false}
+									axisLine={false}
+								/>
+								<Tooltip
+									contentStyle={{
+										backgroundColor: "rgba(26, 26, 46, 0.9)",
+										border: "1px solid rgba(242, 181, 212, 0.2)",
+										borderRadius: "8px",
+									}}
+								/>
+								<Bar
+									dataKey="count"
+									fill="#f2b5d4"
+									radius={[4, 4, 0, 0]}
+									name="Claims"
+								/>
+							</BarChart>
+						</ResponsiveContainer>
+					</div>
+				</div>
+
+				<div className="glass rounded-xl p-6">
+					<h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+						<Calendar size={20} /> Claims by Day of Week
+					</h2>
+					<div className="h-[300px] w-full">
+						<ResponsiveContainer width="100%" height="100%">
+							<BarChart data={dowData}>
+								<CartesianGrid
+									strokeDasharray="3 3"
+									stroke="rgba(255,255,255,0.05)"
+								/>
+								<XAxis
+									dataKey="name"
+									stroke="rgba(255,255,255,0.5)"
+									fontSize={12}
+									tickLine={false}
+									axisLine={false}
+								/>
+								<YAxis
+									stroke="rgba(255,255,255,0.5)"
+									fontSize={12}
+									tickLine={false}
+									axisLine={false}
+								/>
+								<Tooltip
+									contentStyle={{
+										backgroundColor: "rgba(26, 26, 46, 0.9)",
+										border: "1px solid rgba(242, 181, 212, 0.2)",
+										borderRadius: "8px",
+									}}
+								/>
+								<Bar
+									dataKey="count"
+									fill="#3b82f6"
+									radius={[4, 4, 0, 0]}
+									name="Claims"
+								/>
+							</BarChart>
+						</ResponsiveContainer>
 					</div>
 				</div>
 
@@ -313,12 +495,18 @@ function StatisticsPage() {
 								<th className="px-6 py-3 text-sm font-semibold text-right">
 									Value
 								</th>
+								<th className="px-6 py-3 text-sm font-semibold text-center">
+									Status
+								</th>
 								<th className="px-6 py-3 text-sm font-semibold">Date</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-border">
-							{claims.slice(0, 10).map((claim) => (
-								<tr key={claim.id} className="hover:bg-white/5 transition-colors">
+							{claims.slice(0, 20).map((claim) => (
+								<tr
+									key={claim.id}
+									className="hover:bg-white/5 transition-colors"
+								>
 									<td className="px-6 py-4">
 										{claim.characterName || (
 											<span className="text-foreground-subtle italic">
@@ -339,6 +527,15 @@ function StatisticsPage() {
 									</td>
 									<td className="px-6 py-4 text-right font-mono text-sakura-400">
 										{claim.value.toLocaleString()}
+									</td>
+									<td className="px-6 py-4 text-center">
+										{claim.isClaimed ? (
+											<span className="text-green-400 text-xs">Claimed</span>
+										) : (
+											<span className="text-foreground-muted text-xs">
+												Not Claimed
+											</span>
+										)}
 									</td>
 									<td className="px-6 py-4 text-sm text-foreground-muted">
 										{format(parseISO(claim.claimedAt), "MMM dd, HH:mm")}

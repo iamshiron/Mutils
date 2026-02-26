@@ -40,7 +40,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Bundles");
+                    b.ToTable("Bundles", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.BundleCharacterEntry", b =>
@@ -55,7 +55,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("CharacterId");
 
-                    b.ToTable("BundleCharacterEntries");
+                    b.ToTable("BundleCharacterEntries", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.BundleSeriesEntry", b =>
@@ -70,7 +70,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("SeriesId");
 
-                    b.ToTable("BundleSeriesEntries");
+                    b.ToTable("BundleSeriesEntries", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.Character", b =>
@@ -141,7 +141,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("StoredImageId");
 
-                    b.ToTable("Characters");
+                    b.ToTable("Characters", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.CollectionEntry", b =>
@@ -176,7 +176,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("CollectionEntries");
+                    b.ToTable("CollectionEntries", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.DisableList", b =>
@@ -209,7 +209,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DisableLists");
+                    b.ToTable("DisableLists", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.EnableList", b =>
@@ -242,7 +242,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("EnableLists");
+                    b.ToTable("EnableLists", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.ImageJob", b =>
@@ -284,7 +284,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("CharacterId", "OriginalUrl");
 
-                    b.ToTable("ImageJobs");
+                    b.ToTable("ImageJobs", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.KakeraClaim", b =>
@@ -327,7 +327,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("KakeraClaims");
+                    b.ToTable("KakeraClaims", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.ListPreset", b =>
@@ -363,7 +363,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ListPresets");
+                    b.ToTable("ListPresets", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.Series", b =>
@@ -386,7 +386,7 @@ namespace Mutils.Infrastructure.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("Series");
+                    b.ToTable("Series", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.StoredImage", b =>
@@ -438,7 +438,7 @@ namespace Mutils.Infrastructure.Migrations
                     b.HasIndex("BucketName", "ObjectKey")
                         .IsUnique();
 
-                    b.ToTable("StoredImages");
+                    b.ToTable("StoredImages", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.User", b =>
@@ -469,7 +469,7 @@ namespace Mutils.Infrastructure.Migrations
                     b.HasIndex("DiscordId")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Mutils.Core.Entities.BundleCharacterEntry", b =>

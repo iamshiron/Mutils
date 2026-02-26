@@ -14,11 +14,13 @@ import {
 	MagnifyingGlass,
 	SignIn,
 	Images,
+	CaretDown,
 } from "@phosphor-icons/react";
 import { collectionApi } from "@/lib/api";
 import { ImportModal } from "@/components/collection/ImportModal";
 import { useAuth } from "@/hooks/useAuth";
-import type { Character } from "@/types";
+import type { Character, KakeraType } from "@/types";
+import { KAKERA_COLORS } from "@/lib/constants";
 
 export const Route = createFileRoute("/collection")({
 	component: CollectionPage,
@@ -109,6 +111,42 @@ const CharacterCard = memo(function CharacterCard({
 					{character.images !== null && ` · ${character.images} img`}
 					{character.gifs !== null && ` + ${character.gifs} gif`}
 				</p>
+			)}
+
+			{character.kakeraStats && character.kakeraStats.totalValue > 0 && (
+				<div className="relative mt-2 pt-2 border-t border-border/50">
+					<div className="flex items-center justify-between text-xs">
+						<span className="text-foreground-muted">User Kakera</span>
+						<div className="relative group/tooltip">
+							<div className="flex items-center gap-1 cursor-default hover:text-sakura-300 transition-colors font-bold text-sakura-300">
+								<span>{character.kakeraStats.totalValue.toLocaleString()}</span>
+								<CaretDown size={12} weight="bold" className="opacity-50" />
+							</div>
+
+							{/* Simple Absolute Tooltip Overlay */}
+							<div className="hidden group-hover/tooltip:block absolute bottom-full right-0 mb-2 z-[100] glass p-2.5 rounded-lg min-w-[140px] shadow-2xl border border-border/50 pointer-events-none">
+								<p className="text-[10px] uppercase tracking-wider text-foreground-muted mb-1.5 border-b border-border/30 pb-1 font-bold text-center">
+									Breakdown
+								</p>
+								<div className="space-y-1">
+									{Object.entries(character.kakeraStats.byType).map(
+										([type, value]) => (
+											<div
+												key={type}
+												className="flex justify-between items-center gap-4"
+											>
+												<span className="capitalize text-[11px]">{type}</span>
+												<span className="font-mono text-sakura-400 font-bold text-[11px]">
+													{value.toLocaleString()}
+												</span>
+											</div>
+										),
+									)}
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 			)}
 		</div>
 	);
@@ -333,6 +371,7 @@ function CollectionPage() {
 					<option value="rank">Rank</option>
 					<option value="name">Name</option>
 					<option value="kakera">Kakera</option>
+					<option value="user_kakera">Best Performing</option>
 					<option value="claims">Claims</option>
 					<option value="keys">Keys</option>
 				</select>

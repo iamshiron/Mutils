@@ -47,6 +47,12 @@ public static class CollectionEndpoints {
                     ("acquiredat", "asc") => query.OrderBy(e => e.AcquiredAt),
                     ("keys", "asc") => query.OrderBy(e => e.Character.KeyCount ?? 0),
                     ("keys", "desc") => query.OrderByDescending(e => e.Character.KeyCount ?? 0),
+                    ("user_kakera", "asc") => query.OrderBy(e => db.KakeraClaims
+                        .Where(c => c.CharacterId == e.CharacterId && c.UserId == userId)
+                        .Sum(c => (int?)c.Value) ?? 0),
+                    ("user_kakera", "desc") => query.OrderByDescending(e => db.KakeraClaims
+                        .Where(c => c.CharacterId == e.CharacterId && c.UserId == userId)
+                        .Sum(c => (int?)c.Value) ?? 0),
                     ("acquiredat", _) => query.OrderByDescending(e => e.AcquiredAt),
                     _ => query.OrderBy(e => e.Character.Rank ?? int.MaxValue)
                 };
@@ -54,30 +60,59 @@ public static class CollectionEndpoints {
                 var total = await query.CountAsync();
                 var totalPages = (int) Math.Ceiling(total / (double) pageSize);
 
-                var items = await query
+                var entries = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(e => new CollectionEntryDto(
+                    .Select(e => new {
                         e.Id,
-                        new CharacterDto(
-                            e.Character.Id,
-                            e.Character.Name,
-                            e.Character.Rank,
-                            e.Character.Claims,
-                            e.Character.Images,
-                            e.Character.Gifs,
-                            e.Character.SeriesCount,
-                            e.Character.KeyType,
-                            e.Character.KeyCount,
-                            e.Character.Kakera,
-                            e.Character.Sp,
-                            e.Character.OriginalImageUrl,
-                            e.Character.StoredImageId
-                        ),
+                        e.Character,
                         e.AcquiredAt,
                         e.Notes
-                    ))
+                    })
                     .ToListAsync();
+
+                var characterIds = entries.Select(i => i.Character.Id).ToList();
+
+                var claims = await db.KakeraClaims
+                    .Where(c => c.CharacterId.HasValue && characterIds.Contains(c.CharacterId.Value) && c.UserId == userId)
+                    .ToListAsync();
+
+                var statsPerCharacter = claims
+                    .GroupBy(c => c.CharacterId)
+                    .ToDictionary(
+                        g => g.Key!.Value,
+                        g => new CharacterKakeraStatsDto(
+                            g.Sum(c => c.Value),
+                            g.Count(),
+                            g.GroupBy(c => c.Type)
+                                .ToDictionary(
+                                    t => t.Key.ToString().ToLower(),
+                                    t => t.Sum(c => c.Value)
+                                )
+                        )
+                    );
+
+                var items = entries.Select(e => new CollectionEntryDto(
+                    e.Id,
+                    new CharacterDto(
+                        e.Character.Id,
+                        e.Character.Name,
+                        e.Character.Rank,
+                        e.Character.Claims,
+                        e.Character.Images,
+                        e.Character.Gifs,
+                        e.Character.SeriesCount,
+                        e.Character.KeyType,
+                        e.Character.KeyCount,
+                        e.Character.Kakera,
+                        e.Character.Sp,
+                        e.Character.OriginalImageUrl,
+                        e.Character.StoredImageId,
+                        statsPerCharacter.GetValueOrDefault(e.Character.Id)
+                    ),
+                    e.AcquiredAt,
+                    e.Notes
+                )).ToList();
 
                 return Results.Ok(new PaginatedResponse<CollectionEntryDto>(
                     items, total, page, pageSize, totalPages

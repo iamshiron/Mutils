@@ -21,6 +21,13 @@ export interface Character {
 	sp: number | null;
 	imageUrl: string | null;
 	storedImageId: string | null;
+	kakeraStats?: CharacterKakeraStats;
+}
+
+export interface CharacterKakeraStats {
+	totalValue: number;
+	totalCount: number;
+	byType: Record<string, number>;
 }
 
 export interface CollectionEntry {
@@ -134,7 +141,9 @@ export type KakeraType =
 	| "rainbow"
 	| "light"
 	| "chaos"
-	| "dark";
+	| "dark"
+	| "teal"
+	| "bku";
 
 export interface KakeraClaim {
 	id: string;

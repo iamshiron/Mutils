@@ -152,6 +152,7 @@ public partial class MainWindow : Window {
     }
 
     private void OnShowAddKakeraClick(object sender, RoutedEventArgs e) {
+        ClaimedDatePicker.SelectedDate = DateTime.Now;
         ModalOverlay.Visibility = Visibility.Visible;
     }
 
@@ -180,7 +181,7 @@ public partial class MainWindow : Window {
             Type: type,
             Value: value,
             IsClaimed: IsClaimedCheckBox.IsChecked ?? false,
-            ClaimedAt: DateTime.UtcNow
+            ClaimedAt: ClaimedDatePicker.SelectedDate?.ToUniversalTime()
         );
 
         var baseUrl = _settingsService.Current.ApiBaseUrl.TrimEnd('/');

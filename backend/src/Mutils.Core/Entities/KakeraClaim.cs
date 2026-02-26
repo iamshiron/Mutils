@@ -10,7 +10,9 @@ public enum KakeraType {
     Rainbow,
     Light,
     Chaos,
-    Dark
+    Dark,
+    Teal,
+    Bku
 }
 
 public class KakeraClaim : BaseEntity {
