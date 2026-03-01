@@ -21,3 +21,11 @@ public record CreateKakeraClaimRequest(
     bool IsClaimed,
     DateTime? ClaimedAt
 );
+
+public record UpdateKakeraClaimRequest(
+    string? CharacterName,
+    KakeraType Type,
+    int Value,
+    bool IsClaimed,
+    DateTime? ClaimedAt
+);

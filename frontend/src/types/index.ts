@@ -168,6 +168,23 @@ export interface KakeraStats {
 	>;
 }
 
+export interface CreateKakeraClaimRequest {
+	characterId?: string;
+	characterName?: string;
+	type: KakeraType;
+	value: number;
+	isClaimed: boolean;
+	claimedAt?: string;
+}
+
+export interface UpdateKakeraClaimRequest {
+	characterName?: string;
+	type: KakeraType;
+	value: number;
+	isClaimed: boolean;
+	claimedAt?: string;
+}
+
 export interface CalculatorConfig {
 	id: string;
 	name: string;

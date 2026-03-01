@@ -127,6 +127,47 @@ public static class KakeraEndpoints {
 
                 return Results.NoContent();
             });
+
+        group.MapPut("/claims/{id}", async (
+            Guid id,
+            ClaimsPrincipal user,
+            UpdateKakeraClaimRequest request,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var claim = await db.KakeraClaims
+                    .Include(c => c.Character)
+                    .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+
+                if (claim is null) return Results.NotFound();
+
+                Guid? characterId = null;
+                if (!string.IsNullOrEmpty(request.CharacterName)) {
+                    var character = await db.Characters
+                        .FirstOrDefaultAsync(c => c.Name == request.CharacterName);
+                    characterId = character?.Id;
+                }
+
+                claim.CharacterId = characterId;
+                claim.Type = request.Type;
+                claim.Value = request.Value;
+                claim.IsClaimed = request.IsClaimed;
+                claim.ClaimedAt = request.ClaimedAt ?? claim.ClaimedAt;
+
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new KakeraClaimDto(
+                    claim.Id,
+                    claim.UserId,
+                    claim.CharacterId,
+                    request.CharacterName ?? (claim.Character != null ? claim.Character.Name : null),
+                    claim.Type,
+                    claim.Value,
+                    claim.IsClaimed,
+                    claim.ClaimedAt
+                ));
+            });
     }
 
     private static Guid? GetUserId(ClaimsPrincipal user) {

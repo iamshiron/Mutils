@@ -4,10 +4,13 @@ import {
 	ChartPie,
 	Clock,
 	ListNumbers,
+	PencilSimple,
+	Plus,
 	Target,
+	Trash,
 	TrendUp,
 } from "@phosphor-icons/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { format, isAfter, parseISO, startOfDay, subDays } from "date-fns";
 import { useState } from "react";
@@ -27,10 +30,16 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { KakeraClaimModal } from "@/components/kakera/KakeraClaimModal";
 import { useAuth } from "@/hooks/useAuth";
 import { kakeraApi } from "@/lib/api";
 import { KAKERA_COLORS } from "@/lib/constants";
-import type { KakeraType } from "@/types";
+import type {
+	CreateKakeraClaimRequest,
+	KakeraClaim,
+	KakeraType,
+	UpdateKakeraClaimRequest,
+} from "@/types";
 
 export const Route = createFileRoute("/statistics")({
 	component: StatisticsPage,
@@ -39,6 +48,10 @@ export const Route = createFileRoute("/statistics")({
 function StatisticsPage() {
 	const { isAuthenticated } = useAuth();
 	const [pieChartMode, setPieChartMode] = useState<"value" | "count">("value");
+	const [showAddModal, setShowAddModal] = useState(false);
+	const [editClaim, setEditClaim] = useState<KakeraClaim | null>(null);
+	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+	const queryClient = useQueryClient();
 
 	const { data: claims, isLoading: claimsLoading } = useQuery({
 		queryKey: ["kakera-claims"],
@@ -50,6 +63,39 @@ function StatisticsPage() {
 		queryKey: ["kakera-stats"],
 		queryFn: () => kakeraApi.getStats(),
 		enabled: isAuthenticated,
+	});
+
+	const createClaimMutation = useMutation({
+		mutationFn: (request: CreateKakeraClaimRequest) =>
+			kakeraApi.createClaim(request),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["kakera-claims"] });
+			queryClient.invalidateQueries({ queryKey: ["kakera-stats"] });
+		},
+	});
+
+	const updateClaimMutation = useMutation({
+		mutationFn: ({
+			id,
+			request,
+		}: {
+			id: string;
+			request: UpdateKakeraClaimRequest;
+		}) => kakeraApi.updateClaim(id, request),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["kakera-claims"] });
+			queryClient.invalidateQueries({ queryKey: ["kakera-stats"] });
+			setEditClaim(null);
+		},
+	});
+
+	const deleteClaimMutation = useMutation({
+		mutationFn: (id: string) => kakeraApi.deleteClaim(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["kakera-claims"] });
+			queryClient.invalidateQueries({ queryKey: ["kakera-stats"] });
+			setDeleteConfirmId(null);
+		},
 	});
 
 	if (claimsLoading || statsLoading) {
@@ -141,6 +187,14 @@ function StatisticsPage() {
 						Insights and trends for your kakera claims
 					</p>
 				</div>
+				<button
+					type="button"
+					onClick={() => setShowAddModal(true)}
+					className="flex items-center gap-2 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors"
+				>
+					<Plus size={18} />
+					Log Claim
+				</button>
 			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -499,6 +553,7 @@ function StatisticsPage() {
 									Status
 								</th>
 								<th className="px-6 py-3 text-sm font-semibold">Date</th>
+								<th className="px-6 py-3 text-sm font-semibold w-24"></th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-border">
@@ -540,12 +595,66 @@ function StatisticsPage() {
 									<td className="px-6 py-4 text-sm text-foreground-muted">
 										{format(parseISO(claim.claimedAt), "MMM dd, HH:mm")}
 									</td>
+									<td className="px-6 py-4">
+										{deleteConfirmId === claim.id ? (
+											<div className="flex items-center gap-2">
+												<button
+													type="button"
+													onClick={() => deleteClaimMutation.mutate(claim.id)}
+													className="text-torii-400 hover:text-torii-300 text-xs"
+												>
+													Confirm
+												</button>
+												<button
+													type="button"
+													onClick={() => setDeleteConfirmId(null)}
+													className="text-foreground-muted hover:text-foreground text-xs"
+												>
+													Cancel
+												</button>
+											</div>
+										) : (
+											<div className="flex items-center gap-1">
+												<button
+													type="button"
+													onClick={() => setEditClaim(claim)}
+													className="p-1.5 text-foreground-muted hover:text-sakura-400 hover:bg-sakura-500/10 rounded transition-colors"
+												>
+													<PencilSimple size={16} />
+												</button>
+												<button
+													type="button"
+													onClick={() => setDeleteConfirmId(claim.id)}
+													className="p-1.5 text-foreground-muted hover:text-torii-400 hover:bg-torii-500/10 rounded transition-colors"
+												>
+													<Trash size={16} />
+												</button>
+											</div>
+										)}
+									</td>
 								</tr>
 							))}
 						</tbody>
 					</table>
 				</div>
 			</div>
+
+			<KakeraClaimModal
+				isOpen={showAddModal}
+				onClose={() => setShowAddModal(false)}
+				onSubmit={async (request) => {
+					await createClaimMutation.mutateAsync(request);
+				}}
+			/>
+
+			<KakeraClaimModal
+				isOpen={!!editClaim}
+				onClose={() => setEditClaim(null)}
+				editClaim={editClaim}
+				onUpdate={async (id, request) => {
+					await updateClaimMutation.mutateAsync({ id, request });
+				}}
+			/>
 		</div>
 	);
 }

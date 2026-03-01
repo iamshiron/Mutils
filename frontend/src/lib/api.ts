@@ -6,6 +6,7 @@ import type {
 	CollectionEntry,
 	CollectionStats,
 	CreateCalculatorConfigRequest,
+	CreateKakeraClaimRequest,
 	DisableList,
 	EnableList,
 	ImportResponse,
@@ -14,6 +15,7 @@ import type {
 	ListPreset,
 	PaginatedResponse,
 	UpdateCalculatorConfigRequest,
+	UpdateKakeraClaimRequest,
 	User,
 } from "@/types";
 
@@ -226,6 +228,19 @@ export const kakeraApi = {
 
 	getStats: async () => {
 		const { data } = await api.get<KakeraStats>("/kakera/stats");
+		return data;
+	},
+
+	createClaim: async (request: CreateKakeraClaimRequest) => {
+		const { data } = await api.post<KakeraClaim>("/kakera/claims", request);
+		return data;
+	},
+
+	updateClaim: async (id: string, request: UpdateKakeraClaimRequest) => {
+		const { data } = await api.put<KakeraClaim>(
+			`/kakera/claims/${id}`,
+			request,
+		);
 		return data;
 	},
 
