@@ -24,6 +24,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 							Lists
 						</a>
 						<a
+							href="/calculator"
+							className="text-foreground-muted hover:text-foreground transition-colors"
+						>
+							Calculator
+						</a>
+						<a
 							href="/optimizer"
 							className="text-foreground-muted hover:text-foreground transition-colors"
 						>

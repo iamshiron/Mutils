@@ -167,3 +167,51 @@ export interface KakeraStats {
 		}
 	>;
 }
+
+export interface CalculatorConfig {
+	id: string;
+	name: string;
+	totalPool: number;
+	disabledLimit: number;
+	antiDisabled: number;
+	silverBadge: number;
+	rubyBadge: number;
+	bwLevel: number;
+	perk2: number;
+	perk3: number;
+	perk4: number;
+	ownedTotal: number;
+	ownedDisabled: number;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface CreateCalculatorConfigRequest {
+	name: string;
+	totalPool: number;
+	disabledLimit: number;
+	antiDisabled: number;
+	silverBadge: number;
+	rubyBadge: number;
+	bwLevel: number;
+	perk2: number;
+	perk3: number;
+	perk4: number;
+	ownedTotal: number;
+	ownedDisabled: number;
+}
+
+export interface UpdateCalculatorConfigRequest {
+	name?: string;
+	totalPool?: number;
+	disabledLimit?: number;
+	antiDisabled?: number;
+	silverBadge?: number;
+	rubyBadge?: number;
+	bwLevel?: number;
+	perk2?: number;
+	perk3?: number;
+	perk4?: number;
+	ownedTotal?: number;
+	ownedDisabled?: number;
+}

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -10,6 +11,8 @@ using Mutils.Core.Services;
 using Mutils.Infrastructure.Data;
 using Mutils.Infrastructure.Services;
 using Scalar.AspNetCore;
+
+Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -97,6 +100,7 @@ app.MapListEndpoints();
 app.MapOptimizerEndpoints();
 app.MapUserEndpoints();
 app.MapKakeraEndpoints();
+app.MapCalculatorEndpoints();
 
 using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<MutilsDbContext>();

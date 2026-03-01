@@ -1,0 +1,712 @@
+import {
+	Calculator,
+	CheckCircle,
+	Download,
+	Key,
+	Star,
+	Trash,
+	Upload,
+} from "@phosphor-icons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { calculatorApi } from "@/lib/api";
+import type { CalculatorConfig, CreateCalculatorConfigRequest } from "@/types";
+
+export const Route = createFileRoute("/calculator")({
+	component: CalculatorPage,
+});
+
+interface CalculatorInputs {
+	totalPool: number;
+	disabledLimit: number;
+	antiDisabled: number;
+	silverBadge: number;
+	rubyBadge: number;
+	bwLevel: number;
+	perk2: number;
+	perk3: number;
+	perk4: number;
+	ownedTotal: number;
+	ownedDisabled: number;
+}
+
+interface CalculationResults {
+	effectivePool: number;
+	badgeBonus: number;
+	regWishMult: number;
+	starwishMult: number;
+	activeOwned: number;
+	starwishProb: number;
+	wishProb: number;
+	ownedProb: number;
+	doubleKeyChance: number;
+}
+
+const defaultInputs: CalculatorInputs = {
+	totalPool: 33927,
+	disabledLimit: 28927,
+	antiDisabled: 1296,
+	silverBadge: 4,
+	rubyBadge: 2,
+	bwLevel: 2,
+	perk2: 1,
+	perk3: 0,
+	perk4: 0,
+	ownedTotal: 544,
+	ownedDisabled: 216,
+};
+
+function calculate(inputs: CalculatorInputs): CalculationResults {
+	const extraDisabledFromPerk3 = inputs.perk3 * 140;
+	let effectivePool =
+		inputs.totalPool -
+		(inputs.disabledLimit + extraDisabledFromPerk3) +
+		inputs.antiDisabled;
+	if (effectivePool <= 0) effectivePool = 1;
+
+	let badgeBonus = inputs.silverBadge * 25;
+	if (inputs.rubyBadge >= 2) badgeBonus += 50;
+
+	const bwWishBonus = inputs.bwLevel * 20;
+	const regWishMult = 1 + badgeBonus / 100 + bwWishBonus / 100;
+
+	const towerBonus = inputs.perk2 * 50;
+	const bwStarwishBonus = inputs.bwLevel * 10;
+	const starwishMult = regWishMult + towerBonus / 100 + bwStarwishBonus / 100;
+
+	const activeOwned = Math.max(0, inputs.ownedTotal - inputs.ownedDisabled);
+
+	const starwishProb = starwishMult / effectivePool;
+	const wishProb = regWishMult / effectivePool;
+	const ownedProb = activeOwned / effectivePool;
+
+	return {
+		effectivePool,
+		badgeBonus,
+		regWishMult,
+		starwishMult,
+		activeOwned,
+		starwishProb,
+		wishProb,
+		ownedProb,
+		doubleKeyChance: inputs.perk4 * 10,
+	};
+}
+
+function formatOdds(probability: number): string {
+	if (probability <= 0) return "Impossible";
+	const odds = Math.round(1 / probability);
+	return `1 in ${odds.toLocaleString()}`;
+}
+
+function formatPercent(value: number, decimals = 4): string {
+	return (value * 100).toFixed(decimals) + "%";
+}
+
+function CalculatorPage() {
+	const queryClient = useQueryClient();
+	const [inputs, setInputs] = useState<CalculatorInputs>(defaultInputs);
+	const [configName, setConfigName] = useState("");
+	const [importError, setImportError] = useState<string | null>(null);
+
+	const { data: configs = [], isLoading } = useQuery({
+		queryKey: ["calculator-configs"],
+		queryFn: calculatorApi.getAll,
+	});
+
+	const createMutation = useMutation({
+		mutationFn: calculatorApi.create,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["calculator-configs"] });
+			setConfigName("");
+		},
+	});
+
+	const deleteMutation = useMutation({
+		mutationFn: calculatorApi.delete,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["calculator-configs"] });
+		},
+	});
+
+	const results = calculate(inputs);
+
+	const updateInput = (key: keyof CalculatorInputs, value: number) => {
+		setInputs((prev) => ({ ...prev, [key]: value }));
+	};
+
+	const handleSaveConfig = () => {
+		let name = configName.trim();
+		if (!name) {
+			name = `Setup ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+		}
+
+		const request: CreateCalculatorConfigRequest = {
+			name,
+			...inputs,
+		};
+		createMutation.mutate(request);
+	};
+
+	const handleLoadConfig = (config: CalculatorConfig) => {
+		setInputs({
+			totalPool: config.totalPool,
+			disabledLimit: config.disabledLimit,
+			antiDisabled: config.antiDisabled,
+			silverBadge: config.silverBadge,
+			rubyBadge: config.rubyBadge,
+			bwLevel: config.bwLevel,
+			perk2: config.perk2,
+			perk3: config.perk3,
+			perk4: config.perk4,
+			ownedTotal: config.ownedTotal,
+			ownedDisabled: config.ownedDisabled,
+		});
+	};
+
+	const handleDeleteConfig = (id: string) => {
+		deleteMutation.mutate(id);
+	};
+
+	const handleExport = () => {
+		if (configs.length === 0) return;
+		const dataStr = JSON.stringify(configs, null, 2);
+		const blob = new Blob([dataStr], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `mudae-calculator-configs-${new Date().toISOString().split("T")[0]}.json`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	};
+
+	const handleImport = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			const file = event.target.files?.[0];
+			if (!file) return;
+
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				try {
+					const imported = JSON.parse(e.target?.result as string);
+					if (Array.isArray(imported)) {
+						const validImports = imported.filter(
+							(item) => item.id && item.name && item.totalPool !== undefined,
+						);
+						if (validImports.length > 0) {
+							validImports.forEach((config) => {
+								const request: CreateCalculatorConfigRequest = {
+									name: config.name,
+									totalPool: config.totalPool,
+									disabledLimit: config.disabledLimit ?? 0,
+									antiDisabled: config.antiDisabled ?? 0,
+									silverBadge: config.silverBadge ?? 0,
+									rubyBadge: config.rubyBadge ?? 0,
+									bwLevel: config.bwLevel ?? 0,
+									perk2: config.perk2 ?? 0,
+									perk3: config.perk3 ?? 0,
+									perk4: config.perk4 ?? 0,
+									ownedTotal: config.ownedTotal ?? 0,
+									ownedDisabled: config.ownedDisabled ?? 0,
+								};
+								createMutation.mutate(request);
+							});
+							setImportError(null);
+						} else {
+							setImportError("No valid configurations found in the JSON file.");
+						}
+					} else {
+						setImportError(
+							"Invalid configuration file format (expected an array).",
+						);
+					}
+				} catch {
+					setImportError(
+						"Error parsing JSON file. Make sure it is a valid export.",
+					);
+				}
+			};
+			reader.readAsText(file);
+			event.target.value = "";
+		},
+		[createMutation],
+	);
+
+	useEffect(() => {
+		if (importError) {
+			const timer = setTimeout(() => setImportError(null), 5000);
+			return () => clearTimeout(timer);
+		}
+	}, [importError]);
+
+	return (
+		<div className="max-w-6xl mx-auto">
+			<div className="flex items-center gap-3 mb-6">
+				<Calculator size={28} className="text-sakura-500" />
+				<div>
+					<h1 className="text-2xl font-bold">Roll Calculator</h1>
+					<p className="text-foreground-muted text-sm">
+						Calculate your exact odds based on your disable list, badges, and
+						pool limits.
+					</p>
+				</div>
+			</div>
+
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<div className="lg:col-span-2 space-y-6">
+					<PoolSettings inputs={inputs} updateInput={updateInput} />
+					<WishMultipliers inputs={inputs} updateInput={updateInput} />
+					<TowerPerks inputs={inputs} updateInput={updateInput} />
+					<OwnedCharacters inputs={inputs} updateInput={updateInput} />
+
+					<div className="glass rounded-lg p-6 lantern-top">
+						<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
+							Saved Configurations
+						</h2>
+
+						<div className="flex gap-2 mb-4">
+							<input
+								type="text"
+								value={configName}
+								onChange={(e) => setConfigName(e.target.value)}
+								placeholder="Name for current setup..."
+								className="flex-1 bg-background-secondary border border-border rounded-lg px-3 py-2 text-foreground focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition-all"
+							/>
+							<button
+								type="button"
+								onClick={handleSaveConfig}
+								disabled={createMutation.isPending}
+								className="bg-sakura-500 hover:bg-sakura-300 text-background font-medium py-2 px-6 rounded-lg transition-colors disabled:opacity-50"
+							>
+								Save
+							</button>
+						</div>
+
+						{importError && (
+							<div className="mb-4 p-3 bg-error/20 border border-error/50 rounded-lg text-error text-sm">
+								{importError}
+							</div>
+						)}
+
+						<div className="space-y-2 mb-6 max-h-48 overflow-y-auto pr-2">
+							{isLoading ? (
+								<p className="text-foreground-muted text-sm italic py-2 text-center">
+									Loading...
+								</p>
+							) : configs.length === 0 ? (
+								<p className="text-foreground-muted text-sm italic py-2 text-center border border-dashed border-border rounded">
+									No saved configurations yet.
+								</p>
+							) : (
+								configs.map((config) => (
+									<div
+										key={config.id}
+										className="bg-background-secondary border border-border rounded p-3 flex justify-between items-center group"
+									>
+										<span className="text-foreground font-medium truncate flex-1 pr-2">
+											{config.name}
+										</span>
+										<div className="flex gap-2">
+											<button
+												type="button"
+												onClick={() => handleLoadConfig(config)}
+												className="text-xs bg-night-700 hover:bg-sakura-500 text-foreground py-1 px-3 rounded transition-colors"
+											>
+												Load
+											</button>
+											<button
+												type="button"
+												onClick={() => handleDeleteConfig(config.id)}
+												className="text-xs bg-error/30 hover:bg-error text-error hover:text-white py-1 px-3 rounded transition-colors"
+											>
+												<Trash size={14} />
+											</button>
+										</div>
+									</div>
+								))
+							)}
+						</div>
+
+						<div className="flex gap-3 border-t border-border pt-4">
+							<button
+								type="button"
+								onClick={handleExport}
+								disabled={configs.length === 0}
+								className="flex-1 flex items-center justify-center gap-2 bg-night-700 hover:bg-night-600 text-foreground font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+							>
+								<Download size={16} />
+								Export JSON
+							</button>
+							<label className="flex-1 flex items-center justify-center gap-2 bg-night-700 hover:bg-night-600 text-foreground font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer">
+								<Upload size={16} />
+								Import JSON
+								<input
+									type="file"
+									accept=".json"
+									onChange={handleImport}
+									className="hidden"
+								/>
+							</label>
+						</div>
+					</div>
+				</div>
+
+				<div className="space-y-4">
+					<ResultCard
+						title="Effective Rollable Pool"
+						value={results.effectivePool.toLocaleString()}
+						subtext="Total - (DL Limit + Perk 3) + AD"
+						variant="primary"
+					/>
+
+					<ResultCard
+						title="Specific Starwish"
+						icon={<Star size={16} className="text-warning" />}
+						percent={formatPercent(results.starwishProb)}
+						odds={formatOdds(results.starwishProb)}
+						mult={results.starwishMult.toFixed(2)}
+						subtext={`(+${results.badgeBonus}% from Badges)`}
+						variant="warning"
+					/>
+
+					<ResultCard
+						title="Specific Regular Wish"
+						percent={formatPercent(results.wishProb)}
+						odds={formatOdds(results.wishProb)}
+						mult={results.regWishMult.toFixed(2)}
+						variant="default"
+					/>
+
+					<ResultCard
+						title="ANY Rollable Owned"
+						icon={<CheckCircle size={16} className="text-success" />}
+						percent={formatPercent(results.ownedProb, 2)}
+						odds={formatOdds(results.ownedProb)}
+						subtext={`Active Targets: ${results.activeOwned}`}
+						variant="success"
+					/>
+
+					{results.doubleKeyChance > 0 && (
+						<ResultCard
+							title="Double Key Chance"
+							icon={<Key size={16} className="text-info" />}
+							percent={`${results.doubleKeyChance}%`}
+							subtext="Applied when rolling a wished character"
+							variant="info"
+						/>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+interface InputSectionProps {
+	inputs: CalculatorInputs;
+	updateInput: (key: keyof CalculatorInputs, value: number) => void;
+}
+
+function PoolSettings({ inputs, updateInput }: InputSectionProps) {
+	return (
+		<div className="glass rounded-lg p-6 lantern-top">
+			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
+				Pool Settings
+			</h2>
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+				<InputField
+					label="Total in Roulette (e.g. $wg)"
+					value={inputs.totalPool}
+					onChange={(v) => updateInput("totalPool", v)}
+				/>
+				<InputField
+					label="Base Disabled Limit"
+					value={inputs.disabledLimit}
+					onChange={(v) => updateInput("disabledLimit", v)}
+					title="Base limit before Tower Perk 3"
+				/>
+				<InputField
+					label="Antidisabled ($ad)"
+					value={inputs.antiDisabled}
+					onChange={(v) => updateInput("antiDisabled", v)}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function WishMultipliers({ inputs, updateInput }: InputSectionProps) {
+	return (
+		<div className="glass rounded-lg p-6 lantern-top">
+			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
+				Wish Multipliers
+			</h2>
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+				<SelectField
+					label="Silver Badge"
+					value={inputs.silverBadge}
+					onChange={(v) => updateInput("silverBadge", v)}
+					options={[
+						{ value: 0, label: "None" },
+						{ value: 1, label: "Level I (+25%)" },
+						{ value: 2, label: "Level II (+50%)" },
+						{ value: 3, label: "Level III (+75%)" },
+						{ value: 4, label: "Level IV (+100%)" },
+					]}
+				/>
+				<SelectField
+					label="Ruby Badge"
+					value={inputs.rubyBadge}
+					onChange={(v) => updateInput("rubyBadge", v)}
+					options={[
+						{ value: 0, label: "None" },
+						{ value: 1, label: "Level I (No Wish %)" },
+						{ value: 2, label: "Level II (+50%)" },
+						{ value: 3, label: "Level III (+50%)" },
+						{ value: 4, label: "Level IV (+50%)" },
+					]}
+				/>
+				<InputField
+					label="Boostwish ($bw)"
+					value={inputs.bwLevel}
+					onChange={(v) => updateInput("bwLevel", v)}
+					min={0}
+					max={10}
+					title="Adds +20% standard wish and +10% starwish per level"
+				/>
+			</div>
+		</div>
+	);
+}
+
+function TowerPerks({ inputs, updateInput }: InputSectionProps) {
+	return (
+		<div className="glass rounded-lg p-6 lantern-top">
+			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
+				Kakera Tower Perks
+			</h2>
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+				<SelectField
+					label="Perk 2 (Starwish %)"
+					value={inputs.perk2}
+					onChange={(v) => updateInput("perk2", v)}
+					options={[
+						{ value: 0, label: "0 Levels" },
+						{ value: 1, label: "1 Level (+50%)" },
+						{ value: 2, label: "2 Levels (+100%)" },
+						{ value: 3, label: "3 Levels (+150%)" },
+						{ value: 4, label: "4 Levels (+200%)" },
+						{ value: 5, label: "5 Levels (+250%)" },
+					]}
+				/>
+				<SelectField
+					label="Perk 3 (DL Limit)"
+					value={inputs.perk3}
+					onChange={(v) => updateInput("perk3", v)}
+					options={[
+						{ value: 0, label: "0 Levels" },
+						{ value: 1, label: "1 Level (-140 $wg)" },
+						{ value: 2, label: "2 Levels (-280 $wg)" },
+						{ value: 3, label: "3 Levels (-420 $wg)" },
+						{ value: 4, label: "4 Levels (-560 $wg)" },
+						{ value: 5, label: "5 Levels (-700 $wg)" },
+					]}
+					title="Subtracts an extra 140 $wg from your pool per level"
+				/>
+				<SelectField
+					label="Perk 4 (Double Keys)"
+					value={inputs.perk4}
+					onChange={(v) => updateInput("perk4", v)}
+					options={[
+						{ value: 0, label: "0 Levels" },
+						{ value: 1, label: "1 Level (10%)" },
+						{ value: 2, label: "2 Levels (20%)" },
+						{ value: 3, label: "3 Levels (30%)" },
+						{ value: 4, label: "4 Levels (40%)" },
+						{ value: 5, label: "5 Levels (50%)" },
+					]}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function OwnedCharacters({ inputs, updateInput }: InputSectionProps) {
+	return (
+		<div className="glass rounded-lg p-6 lantern-top">
+			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
+				Owned Characters ($persrare 1)
+			</h2>
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<InputField
+					label="Total Owned Characters"
+					value={inputs.ownedTotal}
+					onChange={(v) => updateInput("ownedTotal", v)}
+				/>
+				<InputField
+					label="Owned but Disabled"
+					value={inputs.ownedDisabled}
+					onChange={(v) => updateInput("ownedDisabled", v)}
+				/>
+			</div>
+		</div>
+	);
+}
+
+interface InputFieldProps {
+	label: string;
+	value: number;
+	onChange: (value: number) => void;
+	min?: number;
+	max?: number;
+	title?: string;
+}
+
+function InputField({
+	label,
+	value,
+	onChange,
+	min,
+	max,
+	title,
+}: InputFieldProps) {
+	const id = `input-${label.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+	return (
+		<div>
+			<label
+				htmlFor={id}
+				className="block text-sm font-medium text-foreground-muted mb-1"
+				title={title}
+			>
+				{label}
+			</label>
+			<input
+				id={id}
+				type="number"
+				value={value}
+				onChange={(e) => onChange(parseInt(e.target.value) || 0)}
+				min={min}
+				max={max}
+				className="w-full bg-background-secondary border border-border rounded-lg px-3 py-2.5 text-foreground focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition-all"
+			/>
+		</div>
+	);
+}
+
+interface SelectFieldProps {
+	label: string;
+	value: number;
+	onChange: (value: number) => void;
+	options: { value: number; label: string }[];
+	title?: string;
+}
+
+function SelectField({
+	label,
+	value,
+	onChange,
+	options,
+	title,
+}: SelectFieldProps) {
+	const id = `select-${label.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+	return (
+		<div>
+			<label
+				htmlFor={id}
+				className="block text-sm font-medium text-foreground-muted mb-1"
+				title={title}
+			>
+				{label}
+			</label>
+			<select
+				id={id}
+				value={value}
+				onChange={(e) => onChange(parseInt(e.target.value))}
+				className="w-full bg-background-secondary border border-border rounded-lg px-3 py-2.5 text-foreground focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition-all"
+			>
+				{options.map((opt) => (
+					<option key={opt.value} value={opt.value}>
+						{opt.label}
+					</option>
+				))}
+			</select>
+		</div>
+	);
+}
+
+interface ResultCardProps {
+	title: string;
+	value?: string;
+	percent?: string;
+	odds?: string;
+	mult?: string;
+	subtext?: string;
+	icon?: React.ReactNode;
+	variant?: "primary" | "warning" | "success" | "info" | "default";
+}
+
+function ResultCard({
+	title,
+	value,
+	percent,
+	odds,
+	mult,
+	subtext,
+	icon,
+	variant = "default",
+}: ResultCardProps) {
+	const variantStyles = {
+		primary: "border-sakura-500/50",
+		warning: "border-warning/30",
+		success: "border-success/30",
+		info: "border-info/30",
+		default: "border-border",
+	};
+
+	const textStyles = {
+		primary: "text-sakura-500",
+		warning: "text-warning",
+		success: "text-success",
+		info: "text-info",
+		default: "text-foreground",
+	};
+
+	return (
+		<div className={`glass rounded-lg p-5 border ${variantStyles[variant]}`}>
+			<h3 className="text-sm font-medium text-foreground-muted uppercase tracking-wider flex items-center gap-2">
+				{icon}
+				{title}
+			</h3>
+			{value && (
+				<p
+					className={`text-4xl font-bold text-foreground mt-1 ${textStyles[variant]}`}
+				>
+					{value}
+				</p>
+			)}
+			{percent && (
+				<div className="mt-2 flex items-baseline gap-2">
+					<p className={`text-3xl font-bold ${textStyles[variant]}`}>
+						{percent}
+					</p>
+				</div>
+			)}
+			{odds && (
+				<p className="text-lg text-foreground-muted mt-1 font-mono bg-background-secondary inline-block px-3 py-1 rounded-md">
+					{odds}
+				</p>
+			)}
+			{mult && (
+				<p className="text-xs text-foreground-subtle mt-2">
+					Multiplier: <span className="text-foreground">{mult}</span>x
+					{subtext && <span className="text-sakura-500 ml-1">{subtext}</span>}
+				</p>
+			)}
+			{!mult && subtext && (
+				<p className="text-xs text-foreground-subtle mt-2">{subtext}</p>
+			)}
+		</div>
+	);
+}

@@ -1,26 +1,25 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
-	useQuery,
-	useMutation,
-	useQueryClient,
-	keepPreviousData,
-} from "@tanstack/react-query";
-import { useState, useEffect, memo } from "react";
-import {
+	CaretDown,
 	FolderOpen,
-	Upload,
+	Images,
 	Key,
-	SortAscending,
 	MagnifyingGlass,
 	SignIn,
-	Images,
-	CaretDown,
+	SortAscending,
+	Upload,
 } from "@phosphor-icons/react";
-import { collectionApi } from "@/lib/api";
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { memo, useEffect, useState } from "react";
 import { ImportModal } from "@/components/collection/ImportModal";
 import { useAuth } from "@/hooks/useAuth";
-import type { Character, KakeraType } from "@/types";
-import { KAKERA_COLORS } from "@/lib/constants";
+import { collectionApi } from "@/lib/api";
+import type { Character } from "@/types";
 
 export const Route = createFileRoute("/collection")({
 	component: CollectionPage,

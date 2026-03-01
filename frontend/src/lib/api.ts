@@ -1,17 +1,20 @@
 import axios from "axios";
 import type {
-	User,
-	CollectionEntry,
-	PaginatedResponse,
-	EnableList,
-	DisableList,
-	ListPreset,
-	AuthResponse,
-	ImportResponse,
-	CollectionStats,
 	ApiError,
+	AuthResponse,
+	CalculatorConfig,
+	CollectionEntry,
+	CollectionStats,
+	CreateCalculatorConfigRequest,
+	DisableList,
+	EnableList,
+	ImportResponse,
 	KakeraClaim,
 	KakeraStats,
+	ListPreset,
+	PaginatedResponse,
+	UpdateCalculatorConfigRequest,
+	User,
 } from "@/types";
 
 const api = axios.create({
@@ -235,6 +238,30 @@ export const userApi = {
 	getMe: async () => {
 		const { data } = await api.get<User>("/user/me");
 		return data;
+	},
+};
+
+export const calculatorApi = {
+	getAll: async () => {
+		const { data } = await api.get<CalculatorConfig[]>("/calculator");
+		return data;
+	},
+
+	create: async (request: CreateCalculatorConfigRequest) => {
+		const { data } = await api.post<CalculatorConfig>("/calculator", request);
+		return data;
+	},
+
+	update: async (id: string, request: UpdateCalculatorConfigRequest) => {
+		const { data } = await api.put<CalculatorConfig>(
+			`/calculator/${id}`,
+			request,
+		);
+		return data;
+	},
+
+	delete: async (id: string) => {
+		await api.delete(`/calculator/${id}`);
 	},
 };
 
