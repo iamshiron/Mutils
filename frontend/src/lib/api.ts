@@ -11,6 +11,7 @@ import type {
 	EnableList,
 	ImportResponse,
 	KakeraClaim,
+	KakeraClaimExportItem,
 	KakeraStats,
 	ListPreset,
 	PaginatedResponse,
@@ -246,6 +247,24 @@ export const kakeraApi = {
 
 	deleteClaim: async (id: string) => {
 		await api.delete(`/kakera/claims/${id}`);
+	},
+
+	exportClaims: async () => {
+		const { data } = await api.get<KakeraClaimExportItem[]>("/kakera/export");
+		return data;
+	},
+
+	importClaims: async (claims: KakeraClaimExportItem[]) => {
+		const { data } = await api.post<{ imported: number }>(
+			"/kakera/import",
+			claims,
+		);
+		return data;
+	},
+
+	wipeClaims: async () => {
+		const { data } = await api.delete<{ deleted: number }>("/kakera/claims");
+		return data;
 	},
 };
 

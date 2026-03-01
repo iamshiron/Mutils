@@ -29,3 +29,12 @@ public record UpdateKakeraClaimRequest(
     bool IsClaimed,
     DateTime? ClaimedAt
 );
+
+public record ImportKakeraClaimItem(
+    Guid Id,
+    string? CharacterName,
+    KakeraType Type,
+    int Value,
+    bool IsClaimed,
+    DateTime ClaimedAt
+);

@@ -185,6 +185,15 @@ export interface UpdateKakeraClaimRequest {
 	claimedAt?: string;
 }
 
+export interface KakeraClaimExportItem {
+	id: string;
+	characterName: string | null;
+	type: KakeraType;
+	value: number;
+	isClaimed: boolean;
+	claimedAt: string;
+}
+
 export interface CalculatorConfig {
 	id: string;
 	name: string;

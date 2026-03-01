@@ -3,12 +3,15 @@ import {
 	ChartBar,
 	ChartPie,
 	Clock,
+	Download,
 	ListNumbers,
 	PencilSimple,
 	Plus,
 	Target,
 	Trash,
 	TrendUp,
+	Upload,
+	Warning,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -37,6 +40,7 @@ import { KAKERA_COLORS } from "@/lib/constants";
 import type {
 	CreateKakeraClaimRequest,
 	KakeraClaim,
+	KakeraClaimExportItem,
 	KakeraType,
 	UpdateKakeraClaimRequest,
 } from "@/types";
@@ -51,6 +55,11 @@ function StatisticsPage() {
 	const [showAddModal, setShowAddModal] = useState(false);
 	const [editClaim, setEditClaim] = useState<KakeraClaim | null>(null);
 	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+	const [showImportConfirm, setShowImportConfirm] = useState(false);
+	const [showWipeConfirm, setShowWipeConfirm] = useState(false);
+	const [pendingImportData, setPendingImportData] = useState<
+		KakeraClaimExportItem[] | null
+	>(null);
 	const queryClient = useQueryClient();
 
 	const { data: claims, isLoading: claimsLoading } = useQuery({
@@ -95,6 +104,56 @@ function StatisticsPage() {
 			queryClient.invalidateQueries({ queryKey: ["kakera-claims"] });
 			queryClient.invalidateQueries({ queryKey: ["kakera-stats"] });
 			setDeleteConfirmId(null);
+		},
+	});
+
+	const importClaimsMutation = useMutation({
+		mutationFn: (claims: KakeraClaimExportItem[]) =>
+			kakeraApi.importClaims(claims),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["kakera-claims"] });
+			queryClient.invalidateQueries({ queryKey: ["kakera-stats"] });
+			setShowImportConfirm(false);
+			setPendingImportData(null);
+		},
+	});
+
+	const handleExport = async () => {
+		const data = await kakeraApi.exportClaims();
+		const blob = new Blob([JSON.stringify(data, null, 2)], {
+			type: "application/json",
+		});
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `kakera-claims-${format(new Date(), "yyyy-MM-dd")}.json`;
+		a.click();
+		URL.revokeObjectURL(url);
+	};
+
+	const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			try {
+				const data = JSON.parse(event.target?.result as string);
+				setPendingImportData(data);
+				setShowImportConfirm(true);
+			} catch {
+				alert("Invalid JSON file");
+			}
+		};
+		reader.readAsText(file);
+		e.target.value = "";
+	};
+
+	const wipeClaimsMutation = useMutation({
+		mutationFn: () => kakeraApi.wipeClaims(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["kakera-claims"] });
+			queryClient.invalidateQueries({ queryKey: ["kakera-stats"] });
+			setShowWipeConfirm(false);
 		},
 	});
 
@@ -187,14 +246,42 @@ function StatisticsPage() {
 						Insights and trends for your kakera claims
 					</p>
 				</div>
-				<button
-					type="button"
-					onClick={() => setShowAddModal(true)}
-					className="flex items-center gap-2 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors"
-				>
-					<Plus size={18} />
-					Log Claim
-				</button>
+				<div className="flex flex-wrap gap-2">
+					<button
+						type="button"
+						onClick={handleExport}
+						className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors"
+					>
+						<Download size={18} />
+						Export
+					</button>
+					<label className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors cursor-pointer">
+						<Upload size={18} />
+						Import
+						<input
+							type="file"
+							accept=".json"
+							onChange={handleImportFile}
+							className="hidden"
+						/>
+					</label>
+					<button
+						type="button"
+						onClick={() => setShowWipeConfirm(true)}
+						className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-torii-400 font-semibold rounded-lg hover:bg-torii-500/20 transition-colors"
+					>
+						<Trash size={18} />
+						Wipe
+					</button>
+					<button
+						type="button"
+						onClick={() => setShowAddModal(true)}
+						className="flex items-center gap-2 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors"
+					>
+						<Plus size={18} />
+						Log Claim
+					</button>
+				</div>
 			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -655,6 +742,79 @@ function StatisticsPage() {
 					await updateClaimMutation.mutateAsync({ id, request });
 				}}
 			/>
+
+			{showImportConfirm && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+					<div className="glass rounded-xl w-full max-w-md mx-4 p-6 lantern-top">
+						<div className="flex items-center gap-3 mb-4">
+							<Warning size={24} className="text-warning" weight="bold" />
+							<h2 className="text-xl font-semibold">Import Claims</h2>
+						</div>
+						<p className="text-foreground-muted mb-6">
+							This will <strong className="text-torii-400">overwrite</strong>{" "}
+							all your current kakera claims with the{" "}
+							{pendingImportData?.length || 0} claims from the file. This action
+							cannot be undone.
+						</p>
+						<div className="flex gap-3 justify-end">
+							<button
+								type="button"
+								onClick={() => {
+									setShowImportConfirm(false);
+									setPendingImportData(null);
+								}}
+								className="px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									if (pendingImportData) {
+										importClaimsMutation.mutate(pendingImportData);
+									}
+								}}
+								disabled={importClaimsMutation.isPending}
+								className="px-4 py-2 bg-warning text-background font-semibold rounded-lg hover:bg-warning/80 transition-colors disabled:opacity-50"
+							>
+								{importClaimsMutation.isPending ? "Importing..." : "Import"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{showWipeConfirm && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+					<div className="glass rounded-xl w-full max-w-md mx-4 p-6 lantern-top">
+						<div className="flex items-center gap-3 mb-4">
+							<Warning size={24} className="text-torii-400" weight="bold" />
+							<h2 className="text-xl font-semibold">Wipe All Claims</h2>
+						</div>
+						<p className="text-foreground-muted mb-6">
+							This will permanently delete all {claims?.length || 0} of your
+							kakera claims. This action cannot be undone.
+						</p>
+						<div className="flex gap-3 justify-end">
+							<button
+								type="button"
+								onClick={() => setShowWipeConfirm(false)}
+								className="px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={() => wipeClaimsMutation.mutate()}
+								disabled={wipeClaimsMutation.isPending}
+								className="px-4 py-2 bg-torii-500 text-white font-semibold rounded-lg hover:bg-torii-300 transition-colors disabled:opacity-50"
+							>
+								{wipeClaimsMutation.isPending ? "Deleting..." : "Wipe All"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

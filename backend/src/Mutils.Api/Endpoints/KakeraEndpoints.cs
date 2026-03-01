@@ -168,6 +168,83 @@ public static class KakeraEndpoints {
                     claim.ClaimedAt
                 ));
             });
+
+        group.MapGet("/export", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var claims = await db.KakeraClaims
+                    .Include(c => c.Character)
+                    .Where(c => c.UserId == userId)
+                    .OrderByDescending(c => c.ClaimedAt)
+                    .Select(c => new {
+                        c.Id,
+                        CharacterName = c.Character != null ? c.Character.Name : null,
+                        c.Type,
+                        c.Value,
+                        c.IsClaimed,
+                        c.ClaimedAt
+                    })
+                    .ToListAsync();
+
+                return Results.Ok(claims);
+            });
+
+        group.MapPost("/import", async (
+            ClaimsPrincipal user,
+            List<ImportKakeraClaimItem> claims,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var existingClaims = await db.KakeraClaims
+                    .Where(c => c.UserId == userId)
+                    .ToListAsync();
+                db.KakeraClaims.RemoveRange(existingClaims);
+
+                var imported = 0;
+                foreach (var item in claims) {
+                    Guid? characterId = null;
+                    if (!string.IsNullOrEmpty(item.CharacterName)) {
+                        var character = await db.Characters
+                            .FirstOrDefaultAsync(c => c.Name == item.CharacterName);
+                        characterId = character?.Id;
+                    }
+
+                    var claim = new KakeraClaim {
+                        Id = item.Id,
+                        UserId = userId.Value,
+                        CharacterId = characterId,
+                        Type = item.Type,
+                        Value = item.Value,
+                        IsClaimed = item.IsClaimed,
+                        ClaimedAt = item.ClaimedAt
+                    };
+                    db.KakeraClaims.Add(claim);
+                    imported++;
+                }
+
+                await db.SaveChangesAsync();
+                return Results.Ok(new { Imported = imported });
+            });
+
+        group.MapDelete("/claims", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var claims = await db.KakeraClaims
+                    .Where(c => c.UserId == userId)
+                    .ToListAsync();
+
+                db.KakeraClaims.RemoveRange(claims);
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { Deleted = claims.Count });
+            });
     }
 
     private static Guid? GetUserId(ClaimsPrincipal user) {
