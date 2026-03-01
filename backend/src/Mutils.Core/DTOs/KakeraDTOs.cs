@@ -38,3 +38,20 @@ public record ImportKakeraClaimItem(
     bool IsClaimed,
     DateTime ClaimedAt
 );
+
+public record BulkKakeraImportRequest(
+    string Data,
+    string? CharacterName
+);
+
+public record ParsedKakeraClaim(
+    KakeraType Type,
+    int Value,
+    DateTime? ClaimedAt
+);
+
+public record BulkKakeraImportResponse(
+    int Imported,
+    int Skipped,
+    List<string> Errors
+);

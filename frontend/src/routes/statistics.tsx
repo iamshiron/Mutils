@@ -4,6 +4,7 @@ import {
 	ChartPie,
 	Clock,
 	Download,
+	FileText,
 	ListNumbers,
 	PencilSimple,
 	Plus,
@@ -38,6 +39,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { kakeraApi } from "@/lib/api";
 import { KAKERA_COLORS } from "@/lib/constants";
 import type {
+	BulkKakeraImportResponse,
 	CreateKakeraClaimRequest,
 	KakeraClaim,
 	KakeraClaimExportItem,
@@ -57,6 +59,9 @@ function StatisticsPage() {
 	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 	const [showImportConfirm, setShowImportConfirm] = useState(false);
 	const [showWipeConfirm, setShowWipeConfirm] = useState(false);
+	const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+	const [bulkImportData, setBulkImportData] = useState("");
+	const [bulkImportCharacterName, setBulkImportCharacterName] = useState("");
 	const [pendingImportData, setPendingImportData] = useState<
 		KakeraClaimExportItem[] | null
 	>(null);
@@ -154,6 +159,35 @@ function StatisticsPage() {
 			queryClient.invalidateQueries({ queryKey: ["kakera-claims"] });
 			queryClient.invalidateQueries({ queryKey: ["kakera-stats"] });
 			setShowWipeConfirm(false);
+		},
+	});
+
+	const bulkImportMutation = useMutation({
+		mutationFn: async () => {
+			console.log("Sending bulk import:", {
+				data: bulkImportData,
+				characterName: bulkImportCharacterName,
+			});
+			const result = await kakeraApi.bulkImport({
+				data: bulkImportData,
+				characterName: bulkImportCharacterName || undefined,
+			});
+			console.log("Bulk import result:", result);
+			return result;
+		},
+		onSuccess: (result: BulkKakeraImportResponse) => {
+			queryClient.invalidateQueries({ queryKey: ["kakera-claims"] });
+			queryClient.invalidateQueries({ queryKey: ["kakera-stats"] });
+			setShowBulkImportModal(false);
+			setBulkImportData("");
+			setBulkImportCharacterName("");
+			if (result.errors.length > 0) {
+				alert(
+					`Imported ${result.imported}, Skipped ${result.skipped}\n\nErrors:\n${result.errors.join("\n")}`,
+				);
+			} else {
+				alert(`Imported ${result.imported} claims, skipped ${result.skipped}`);
+			}
 		},
 	});
 
@@ -265,6 +299,14 @@ function StatisticsPage() {
 							className="hidden"
 						/>
 					</label>
+					<button
+						type="button"
+						onClick={() => setShowBulkImportModal(true)}
+						className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors"
+					>
+						<FileText size={18} />
+						Bulk Import
+					</button>
 					<button
 						type="button"
 						onClick={() => setShowWipeConfirm(true)}
@@ -810,6 +852,88 @@ function StatisticsPage() {
 								className="px-4 py-2 bg-torii-500 text-white font-semibold rounded-lg hover:bg-torii-300 transition-colors disabled:opacity-50"
 							>
 								{wipeClaimsMutation.isPending ? "Deleting..." : "Wipe All"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{showBulkImportModal && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+					<div className="glass rounded-xl w-full max-w-2xl mx-4 p-6 lantern-top">
+						<div className="flex items-center gap-3 mb-4">
+							<FileText size={24} className="text-sakura-400" weight="bold" />
+							<h2 className="text-xl font-semibold">
+								Bulk Import from Discord
+							</h2>
+						</div>
+						<p className="text-foreground-muted mb-4">
+							Paste your Discord kakera log data below. The parser will
+							automatically extract kakera claims.
+						</p>
+						<div className="space-y-4">
+							<div>
+								<label
+									htmlFor="character-name"
+									className="block text-sm font-medium mb-2"
+								>
+									Character Name (optional)
+								</label>
+								<input
+									id="character-name"
+									type="text"
+									value={bulkImportCharacterName}
+									onChange={(e) => setBulkImportCharacterName(e.target.value)}
+									placeholder="e.g., iamshiron"
+									className="w-full px-4 py-2 bg-background-tertiary rounded-lg border border-border focus:border-sakura-500 focus:outline-none"
+								/>
+								<p className="text-xs text-foreground-muted mt-1">
+									If provided, all claims will be associated with this
+									character.
+								</p>
+							</div>
+							<div>
+								<label
+									htmlFor="log-data"
+									className="block text-sm font-medium mb-2"
+								>
+									Log Data
+								</label>
+								<textarea
+									id="log-data"
+									value={bulkImportData}
+									onChange={(e) => setBulkImportData(e.target.value)}
+									placeholder={`Paste Discord log here, e.g.:
+Logan Yarborough
+APP
+ — 10/22/2025 7:06 PM
+:kakera:iamshiron +121 ($k)`}
+									rows={10}
+									className="w-full px-4 py-3 bg-background-tertiary rounded-lg border border-border focus:border-sakura-500 focus:outline-none font-mono text-sm resize-none"
+								/>
+							</div>
+						</div>
+						<div className="flex gap-3 justify-end mt-6">
+							<button
+								type="button"
+								onClick={() => {
+									setShowBulkImportModal(false);
+									setBulkImportData("");
+									setBulkImportCharacterName("");
+								}}
+								className="px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={() => bulkImportMutation.mutate()}
+								disabled={
+									bulkImportMutation.isPending || !bulkImportData.trim()
+								}
+								className="px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors disabled:opacity-50"
+							>
+								{bulkImportMutation.isPending ? "Importing..." : "Import"}
 							</button>
 						</div>
 					</div>

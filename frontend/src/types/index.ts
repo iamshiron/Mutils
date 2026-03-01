@@ -241,3 +241,14 @@ export interface UpdateCalculatorConfigRequest {
 	ownedTotal?: number;
 	ownedDisabled?: number;
 }
+
+export interface BulkKakeraImportRequest {
+	data: string;
+	characterName?: string;
+}
+
+export interface BulkKakeraImportResponse {
+	imported: number;
+	skipped: number;
+	errors: string[];
+}

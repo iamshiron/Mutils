@@ -25,6 +25,7 @@ builder.Services.AddDbContext<MutilsDbContext>(options =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMudaeParser, MudaeParser>();
+builder.Services.AddScoped<IKakeraLogParser, KakeraLogParser>();
 builder.Services.AddScoped<IOptimizerService, OptimizerService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IStorageService, MinioStorageService>();
@@ -49,9 +50,9 @@ var jwtIssuer = builder.Configuration["JWT_ISSUER"] ?? "mutils";
 var jwtAudience = builder.Configuration["JWT_AUDIENCE"] ?? "mutils-users";
 
 builder.Services.AddAuthentication(options => {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
     .AddJwtBearer(options => {
         options.TokenValidationParameters = new TokenValidationParameters {
             ValidateIssuer = true,

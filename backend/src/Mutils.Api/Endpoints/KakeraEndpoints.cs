@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Mutils.Core.DTOs;
 using Mutils.Core.Entities;
+using Mutils.Core.Services;
 using Mutils.Infrastructure.Data;
 
 namespace Mutils.Api.Endpoints;
@@ -52,7 +53,7 @@ public static class KakeraEndpoints {
                 if (userId is null) return Results.Unauthorized();
 
                 Guid? characterId = request.CharacterId;
-                
+
                 // If character ID is not provided but name is, try to find it
                 if (characterId == null && !string.IsNullOrEmpty(request.CharacterName)) {
                     var character = await db.Characters
@@ -83,7 +84,7 @@ public static class KakeraEndpoints {
                     claim.ClaimedAt
                 ));
             });
-            
+
         group.MapGet("/stats", async (
             ClaimsPrincipal user,
             MutilsDbContext db) => {
@@ -236,14 +237,81 @@ public static class KakeraEndpoints {
                 var userId = GetUserId(user);
                 if (userId is null) return Results.Unauthorized();
 
-                var claims = await db.KakeraClaims
-                    .Where(c => c.UserId == userId)
-                    .ToListAsync();
+                try {
+                    var claims = await db.KakeraClaims
+                        .Where(c => c.UserId == userId)
+                        .ToListAsync();
 
-                db.KakeraClaims.RemoveRange(claims);
-                await db.SaveChangesAsync();
+                    db.KakeraClaims.RemoveRange(claims);
+                    await db.SaveChangesAsync();
 
-                return Results.Ok(new { Deleted = claims.Count });
+                    return Results.Ok(new { Deleted = claims.Count });
+                } catch (Exception ex) {
+                    var errorMsg = ex.InnerException?.Message ?? ex.Message;
+                    return Results.BadRequest(new { Error = errorMsg });
+                }
+            });
+
+        group.MapPost("/bulk-import", async (
+            ClaimsPrincipal user,
+            BulkKakeraImportRequest request,
+            IKakeraLogParser parser,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var errors = new List<string>();
+
+                if (string.IsNullOrEmpty(request.Data)) {
+                    errors.Add("No data provided - request.Data is null or empty");
+                    return Results.Ok(new BulkKakeraImportResponse(0, 0, errors));
+                }
+
+                try {
+                    var parsedClaims = parser.ParseKakeraLog(request.Data).ToList();
+                    var imported = 0;
+                    var skipped = 0;
+
+                    if (parsedClaims.Count == 0) {
+                        errors.Add($"No claims parsed from data. Length={request.Data.Length}");
+                        var preview = request.Data.Length > 300 ? request.Data[..300] : request.Data;
+                        errors.Add($"Preview: {preview}");
+                    }
+
+                    Guid? characterId = null;
+                    if (!string.IsNullOrEmpty(request.CharacterName)) {
+                        var character = await db.Characters
+                            .FirstOrDefaultAsync(c => c.Name == request.CharacterName);
+                        characterId = character?.Id;
+                    }
+
+                    foreach (var parsed in parsedClaims) {
+                        if (parsed.Value <= 0) {
+                            skipped++;
+                            continue;
+                        }
+
+                        var claim = new KakeraClaim {
+                            UserId = userId.Value,
+                            CharacterId = characterId,
+                            Type = parsed.Type,
+                            Value = parsed.Value,
+                            IsClaimed = true,
+                            ClaimedAt = parsed.ClaimedAt ?? DateTime.UtcNow
+                        };
+                        db.KakeraClaims.Add(claim);
+                        imported++;
+                    }
+
+                    await db.SaveChangesAsync();
+                    return Results.Ok(new BulkKakeraImportResponse(imported, skipped, errors));
+                } catch (Exception ex) {
+                    errors.Add($"Exception: {ex.Message}");
+                    if (ex.InnerException != null) {
+                        errors.Add($"Inner: {ex.InnerException.Message}");
+                    }
+                    return Results.Ok(new BulkKakeraImportResponse(0, 0, errors));
+                }
             });
     }
 

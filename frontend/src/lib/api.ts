@@ -2,6 +2,8 @@ import axios from "axios";
 import type {
 	ApiError,
 	AuthResponse,
+	BulkKakeraImportRequest,
+	BulkKakeraImportResponse,
 	CalculatorConfig,
 	CollectionEntry,
 	CollectionStats,
@@ -264,6 +266,14 @@ export const kakeraApi = {
 
 	wipeClaims: async () => {
 		const { data } = await api.delete<{ deleted: number }>("/kakera/claims");
+		return data;
+	},
+
+	bulkImport: async (request: BulkKakeraImportRequest) => {
+		const { data } = await api.post<BulkKakeraImportResponse>(
+			"/kakera/bulk-import",
+			request,
+		);
 		return data;
 	},
 };
