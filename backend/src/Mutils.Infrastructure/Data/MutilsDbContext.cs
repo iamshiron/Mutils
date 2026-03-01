@@ -149,12 +149,12 @@ public class MutilsDbContext : DbContext {
             entity.HasIndex(e => e.CharacterId);
             entity.HasIndex(e => e.ClaimedAt);
             entity.HasIndex(e => e.Type);
-            
+
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
-                
+
             entity.HasOne(e => e.Character)
                 .WithMany()
                 .HasForeignKey(e => e.CharacterId)

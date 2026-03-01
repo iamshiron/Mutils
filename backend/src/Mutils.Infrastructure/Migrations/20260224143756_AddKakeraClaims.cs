@@ -1,20 +1,16 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Mutils.Infrastructure.Migrations
-{
+namespace Mutils.Infrastructure.Migrations {
     /// <inheritdoc />
-    public partial class AddKakeraClaims : Migration
-    {
+    public partial class AddKakeraClaims : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.CreateTable(
                 name: "KakeraClaims",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     CharacterId = table.Column<Guid>(type: "uuid", nullable: true),
@@ -24,8 +20,7 @@ namespace Mutils.Infrastructure.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_KakeraClaims", x => x.Id);
                     table.ForeignKey(
                         name: "FK_KakeraClaims_Characters_CharacterId",
@@ -63,8 +58,7 @@ namespace Mutils.Infrastructure.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "KakeraClaims");
         }

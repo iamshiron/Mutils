@@ -1,15 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Mutils.Infrastructure.Migrations
-{
+namespace Mutils.Infrastructure.Migrations {
     /// <inheritdoc />
-    public partial class AddIsClaimedToKakeraClaims : Migration
-    {
+    public partial class AddIsClaimedToKakeraClaims : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<bool>(
                 name: "IsClaimed",
                 table: "KakeraClaims",
@@ -19,8 +16,7 @@ namespace Mutils.Infrastructure.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "IsClaimed",
                 table: "KakeraClaims");

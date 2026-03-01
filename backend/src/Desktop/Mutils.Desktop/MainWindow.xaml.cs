@@ -94,7 +94,7 @@ public partial class MainWindow : Window {
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settingsService.Current.AccessToken);
-            
+
             var response = await _httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode) {
                 var data = await response.Content.ReadFromJsonAsync<PaginatedResponse<CollectionEntryDto>>();
@@ -232,7 +232,7 @@ public partial class MainWindow : Window {
         CollectionNav.Background = Brushes.Transparent;
         HistoryNav.Background = Brushes.Transparent;
         SettingsNav.Background = Brushes.Transparent;
-        
+
         DashboardNav.Foreground = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#BBB"));
         CollectionNav.Foreground = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#BBB"));
         HistoryNav.Foreground = new SolidColorBrush((Color) ColorConverter.ConvertFromString("#BBB"));

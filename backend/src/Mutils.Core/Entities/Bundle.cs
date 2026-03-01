@@ -1,4 +1,4 @@
-﻿namespace Mutils.Core.Entities;
+namespace Mutils.Core.Entities;
 
 public class Bundle : BaseEntity {
     public required string Name { get; set; }

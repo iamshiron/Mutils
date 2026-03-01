@@ -1,16 +1,13 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Mutils.Infrastructure.Migrations
-{
+namespace Mutils.Infrastructure.Migrations {
     /// <inheritdoc />
-    public partial class UpdateModels : Migration
-    {
+    public partial class UpdateModels : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<Guid>(
                 name: "SeriesId",
                 table: "Characters",
@@ -19,41 +16,35 @@ namespace Mutils.Infrastructure.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Bundles",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Bundles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Series",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Series", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
                 name: "BundleCharacterEntries",
-                columns: table => new
-                {
+                columns: table => new {
                     BundleId = table.Column<Guid>(type: "uuid", nullable: false),
                     CharacterId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_BundleCharacterEntries", x => new { x.BundleId, x.CharacterId });
                     table.ForeignKey(
                         name: "FK_BundleCharacterEntries_Bundles_CharacterId",
@@ -71,13 +62,11 @@ namespace Mutils.Infrastructure.Migrations
 
             migrationBuilder.CreateTable(
                 name: "BundleSeriesEntries",
-                columns: table => new
-                {
+                columns: table => new {
                     BundleId = table.Column<Guid>(type: "uuid", nullable: false),
                     SeriesId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_BundleSeriesEntries", x => new { x.BundleId, x.SeriesId });
                     table.ForeignKey(
                         name: "FK_BundleSeriesEntries_Bundles_SeriesId",
@@ -123,8 +112,7 @@ namespace Mutils.Infrastructure.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropForeignKey(
                 name: "FK_Characters_Series_SeriesId",
                 table: "Characters");

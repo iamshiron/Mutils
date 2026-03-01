@@ -49,10 +49,10 @@ public static class CollectionEndpoints {
                     ("keys", "desc") => query.OrderByDescending(e => e.Character.KeyCount ?? 0),
                     ("user_kakera", "asc") => query.OrderBy(e => db.KakeraClaims
                         .Where(c => c.CharacterId == e.CharacterId && c.UserId == userId)
-                        .Sum(c => (int?)c.Value) ?? 0),
+                        .Sum(c => (int?) c.Value) ?? 0),
                     ("user_kakera", "desc") => query.OrderByDescending(e => db.KakeraClaims
                         .Where(c => c.CharacterId == e.CharacterId && c.UserId == userId)
-                        .Sum(c => (int?)c.Value) ?? 0),
+                        .Sum(c => (int?) c.Value) ?? 0),
                     ("acquiredat", _) => query.OrderByDescending(e => e.AcquiredAt),
                     _ => query.OrderBy(e => e.Character.Rank ?? int.MaxValue)
                 };
