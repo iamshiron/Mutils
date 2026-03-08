@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Mutils.Core.Services;
+using Mutils.Core.Helpers;
 
 namespace Mutils.Infrastructure.Services;
 
@@ -28,8 +29,8 @@ public partial class MudaeParser : IMudaeParser {
         var images = ParseInt(match.Groups["images"].Value);
         var gifs = ParseInt(match.Groups["gifs"].Value);
         var seriesCount = ParseInt(match.Groups["series"].Value);
-        var keyType = match.Groups["keyType"].Success ? match.Groups["keyType"].Value : null;
         var keyCount = match.Groups["keyCount"].Success ? ParseInt(match.Groups["keyCount"].Value) : null;
+        var keyType = KeyHelper.GetKeyTypeFromCount(keyCount);
         var kakera = ParseInt(match.Groups["kakera"].Value);
         var sp = match.Groups["sp"].Success ? ParseInt(match.Groups["sp"].Value) : null;
         var imageUrl = match.Groups["imageUrl"].Success ? match.Groups["imageUrl"].Value.Trim() : null;

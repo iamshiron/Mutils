@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Mutils.Core.DTOs;
 using Mutils.Core.Services;
+using Mutils.Core.Helpers;
 using Mutils.Infrastructure.Data;
 using Mutils.Core.Entities;
 
@@ -132,15 +133,70 @@ public static class CollectionEndpoints {
                     .ToListAsync();
 
                 var keyDistribution = entries
+                    .Select(c => new { KeyType = KeyHelper.GetKeyTypeFromCount(c.KeyCount) })
                     .Where(c => c.KeyType is not null)
                     .GroupBy(c => c.KeyType!)
                     .ToDictionary(g => g.Key, g => g.Count());
 
-                return Results.Ok(new CollectionStatsDto(
+return Results.Ok(new CollectionStatsDto(
                     entries.Count,
                     entries.Sum(c => c.Kakera ?? 0),
                     keyDistribution
                 ));
+            });
+
+        group.MapPost("/export", async (
+            ClaimsPrincipal user,
+            CollectionExportRequest request,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var baseQuery = db.CollectionEntries
+                    .Where(e => e.UserId == userId);
+
+                var totalCount = await baseQuery.CountAsync();
+
+                IQueryable<CollectionEntry> filteredQuery = db.CollectionEntries
+                    .Include(e => e.Character)
+                    .Where(e => e.UserId == userId);
+
+                if (request.MinKeys.HasValue) {
+                    filteredQuery = filteredQuery.Where(e => e.Character.KeyCount >= request.MinKeys);
+                }
+
+                var sortBy = request.SortBy?.ToLower() ?? "kakera";
+                var sortOrder = request.SortOrder?.ToLower() ?? "desc";
+
+                var orderedQuery = (sortBy, sortOrder) switch {
+                    ("name", "asc") => filteredQuery.OrderBy(e => e.Character.Name),
+                    ("name", "desc") => filteredQuery.OrderByDescending(e => e.Character.Name),
+                    ("kakera", "asc") => filteredQuery.OrderBy(e => e.Character.Kakera ?? 0),
+                    ("kakera", "desc") => filteredQuery.OrderByDescending(e => e.Character.Kakera ?? 0),
+                    ("keycount", "asc") => filteredQuery.OrderBy(e => e.Character.KeyCount ?? 0),
+                    ("keycount", "desc") => filteredQuery.OrderByDescending(e => e.Character.KeyCount ?? 0),
+                    ("sp", "asc") => filteredQuery.OrderBy(e => e.Character.Sp ?? 0),
+                    ("sp", "desc") => filteredQuery.OrderByDescending(e => e.Character.Sp ?? 0),
+                    _ => filteredQuery.OrderByDescending(e => e.Character.Kakera ?? 0)
+                };
+
+                var exportedCount = await orderedQuery.CountAsync();
+
+                var finalQuery = orderedQuery;
+                if (request.Limit.HasValue && request.Limit > 0) {
+                    finalQuery = (IOrderedQueryable<CollectionEntry>)orderedQuery.Take(request.Limit.Value);
+                }
+
+                var items = await finalQuery
+                    .Select(e => new CollectionExportItemDto(
+                        e.Character.Name,
+                        e.Character.Kakera,
+                        e.Character.KeyCount,
+                        e.Character.Sp
+                    ))
+                    .ToListAsync();
+
+                return Results.Ok(new CollectionExportResponse(totalCount, exportedCount, items));
             });
 
         group.MapPost("/import", async (
@@ -220,7 +276,7 @@ public static class CollectionEndpoints {
                             character.Claims = parsedChar.Claims;
                             needsUpdate = true;
                         }
-                        if (!string.IsNullOrEmpty(parsedChar.KeyType) && character.KeyType != parsedChar.KeyType) {
+                        if (parsedChar.KeyCount.HasValue && character.KeyCount != parsedChar.KeyCount) {
                             character.KeyType = parsedChar.KeyType;
                             character.KeyCount = parsedChar.KeyCount;
                             needsUpdate = true;
@@ -383,11 +439,18 @@ public static class CollectionEndpoints {
                 if (userId is null) return Results.Unauthorized();
 
                 var entry = await db.CollectionEntries
+                    .Include(e => e.Character)
                     .FirstOrDefaultAsync(e => e.Id == id && e.UserId == userId);
 
                 if (entry is null) return Results.NotFound();
 
                 entry.Notes = request.Notes;
+                
+                if (request.KeyCount.HasValue) {
+                    entry.Character.KeyCount = request.KeyCount;
+                    entry.Character.KeyType = KeyHelper.GetKeyTypeFromCount(request.KeyCount);
+                }
+                
                 await db.SaveChangesAsync();
 
                 return Results.Ok(new { message = "Updated successfully" });
@@ -431,4 +494,4 @@ public static class CollectionEndpoints {
     }
 }
 
-public record UpdateCollectionRequest(string? Notes);
+public record UpdateCollectionRequest(string? Notes, int? KeyCount = null);

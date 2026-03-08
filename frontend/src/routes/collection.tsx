@@ -1,11 +1,14 @@
 import {
 	CaretDown,
+	Download,
 	FolderOpen,
 	Images,
 	Key,
 	MagnifyingGlass,
+	Pencil,
 	SignIn,
 	SortAscending,
+	Trash,
 	Upload,
 } from "@phosphor-icons/react";
 import {
@@ -19,7 +22,7 @@ import { memo, useEffect, useState } from "react";
 import { ImportModal } from "@/components/collection/ImportModal";
 import { useAuth } from "@/hooks/useAuth";
 import { collectionApi } from "@/lib/api";
-import type { Character } from "@/types";
+import type { CollectionEntry, CollectionExportRequest } from "@/types";
 
 export const Route = createFileRoute("/collection")({
 	component: CollectionPage,
@@ -37,14 +40,20 @@ function useDebouncedValue<T>(value: T, delay: number): T {
 }
 
 const CharacterCard = memo(function CharacterCard({
-	character,
+	entry,
+	onEdit,
+	onDelete,
 }: {
-	character: Character;
+	entry: CollectionEntry;
+	onEdit: (entry: CollectionEntry) => void;
+	onDelete: (entry: CollectionEntry) => void;
 }) {
+	const character = entry.character;
 	const keyColors: Record<string, string> = {
 		bronzekey: "text-amber-600",
 		silverkey: "text-gray-400",
 		goldkey: "text-yellow-500",
+		chaoskey: "text-purple-500",
 		rubykey: "text-red-500",
 		emeraldkey: "text-emerald-500",
 		sapphirekey: "text-blue-500",
@@ -147,12 +156,344 @@ const CharacterCard = memo(function CharacterCard({
 					</div>
 				</div>
 			)}
+
+			<div className="flex gap-2 mt-3 pt-2 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
+				<button
+					type="button"
+					onClick={() => onEdit(entry)}
+					className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-background-tertiary hover:bg-background-secondary rounded transition-colors"
+				>
+					<Pencil size={14} />
+					Edit
+				</button>
+				<button
+					type="button"
+					onClick={() => onDelete(entry)}
+					className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-torii-500/20 hover:bg-torii-500/40 text-torii-300 rounded transition-colors"
+				>
+					<Trash size={14} />
+					Remove
+				</button>
+			</div>
 		</div>
 	);
 });
 
+function ExportModal({
+	isOpen,
+	onClose,
+	onExport,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	onExport: (request: CollectionExportRequest) => Promise<void>;
+}) {
+	const [minKeys, setMinKeys] = useState<number | "">("");
+	const [sortBy, setSortBy] =
+		useState<CollectionExportRequest["sortBy"]>("kakera");
+	const [sortOrder, setSortOrder] =
+		useState<CollectionExportRequest["sortOrder"]>("desc");
+	const [limit, setLimit] = useState<number | "">("");
+	const [isExporting, setIsExporting] = useState(false);
+
+	const handleExport = async () => {
+		setIsExporting(true);
+		try {
+			await onExport({
+				minKeys: minKeys === "" ? undefined : minKeys,
+				sortBy,
+				sortOrder,
+				limit: limit === "" ? undefined : limit,
+			});
+			onClose();
+		} finally {
+			setIsExporting(false);
+		}
+	};
+
+	if (!isOpen) return null;
+
+	return (
+		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+			<div className="glass rounded-lg p-6 max-w-md w-full mx-4">
+				<h2 className="text-xl font-bold mb-4">Export Collection</h2>
+
+				<div className="space-y-4">
+					<div>
+						<label className="block text-sm text-foreground-muted mb-1">
+							Minimum Keys
+						</label>
+						<input
+							type="number"
+							value={minKeys}
+							onChange={(e) =>
+								setMinKeys(e.target.value === "" ? "" : Number(e.target.value))
+							}
+							placeholder="Any"
+							min={0}
+							className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm text-foreground-muted mb-1">
+							Sort By
+						</label>
+						<select
+							value={sortBy}
+							onChange={(e) =>
+								setSortBy(e.target.value as CollectionExportRequest["sortBy"])
+							}
+							className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+						>
+							<option value="kakera">Kakera Value</option>
+							<option value="keyCount">Key Count</option>
+							<option value="sp">Spheres</option>
+							<option value="name">Name</option>
+						</select>
+					</div>
+
+					<div>
+						<label className="block text-sm text-foreground-muted mb-1">
+							Sort Order
+						</label>
+						<select
+							value={sortOrder}
+							onChange={(e) =>
+								setSortOrder(
+									e.target.value as CollectionExportRequest["sortOrder"],
+								)
+							}
+							className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+						>
+							<option value="desc">Descending</option>
+							<option value="asc">Ascending</option>
+						</select>
+					</div>
+
+					<div>
+						<label className="block text-sm text-foreground-muted mb-1">
+							Limit Results
+						</label>
+						<input
+							type="number"
+							value={limit}
+							onChange={(e) =>
+								setLimit(e.target.value === "" ? "" : Number(e.target.value))
+							}
+							placeholder="All"
+							min={1}
+							className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+						/>
+					</div>
+				</div>
+
+				<div className="flex gap-3 mt-6">
+					<button
+						type="button"
+						onClick={onClose}
+						className="flex-1 px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={handleExport}
+						disabled={isExporting}
+						className="flex-1 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+					>
+						<Download size={18} />
+						{isExporting ? "Exporting..." : "Export JSON"}
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function EditModal({
+	entry,
+	isOpen,
+	onClose,
+	onSave,
+}: {
+	entry: CollectionEntry | null;
+	isOpen: boolean;
+	onClose: () => void;
+	onSave: (
+		id: string,
+		data: { notes?: string; keyCount?: number },
+	) => Promise<void>;
+}) {
+	const [notes, setNotes] = useState("");
+	const [keyCount, setKeyCount] = useState<number | "">("");
+	const [isSaving, setIsSaving] = useState(false);
+
+	useEffect(() => {
+		if (entry) {
+			setNotes(entry.notes || "");
+			setKeyCount(entry.character.keyCount ?? "");
+		}
+	}, [entry]);
+
+	const handleSave = async () => {
+		if (!entry) return;
+		setIsSaving(true);
+		try {
+			await onSave(entry.id, {
+				notes: notes || undefined,
+				keyCount: keyCount === "" ? undefined : keyCount,
+			});
+			onClose();
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	if (!isOpen || !entry) return null;
+
+	return (
+		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+			<div className="glass rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+				<h2 className="text-xl font-bold mb-2">Edit Character</h2>
+				<p className="text-foreground-muted text-sm mb-4">
+					{entry.character.name}
+				</p>
+
+				<div className="space-y-4">
+					<div>
+						<label
+							htmlFor="edit-key-count"
+							className="block text-sm text-foreground-muted mb-1"
+						>
+							Key Count
+						</label>
+						<input
+							id="edit-key-count"
+							type="number"
+							value={keyCount}
+							onChange={(e) =>
+								setKeyCount(e.target.value === "" ? "" : Number(e.target.value))
+							}
+							min={0}
+							placeholder="0"
+							className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+						/>
+						<p className="text-xs text-foreground-subtle mt-1">
+							Key type is automatically determined: Bronze (1-2), Silver (3-5),
+							Gold (6-9), Chaos (10+)
+						</p>
+					</div>
+
+					<div>
+						<label
+							htmlFor="edit-notes"
+							className="block text-sm text-foreground-muted mb-1"
+						>
+							Notes
+						</label>
+						<textarea
+							id="edit-notes"
+							value={notes}
+							onChange={(e) => setNotes(e.target.value)}
+							placeholder="Add notes about this character..."
+							rows={4}
+							className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none resize-none"
+						/>
+					</div>
+				</div>
+
+				<div className="flex gap-3 mt-6">
+					<button
+						type="button"
+						onClick={onClose}
+						className="flex-1 px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={handleSave}
+						disabled={isSaving}
+						className="flex-1 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+					>
+						{isSaving ? "Saving..." : "Save"}
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function DeleteConfirmModal({
+	entry,
+	isOpen,
+	onClose,
+	onConfirm,
+}: {
+	entry: CollectionEntry | null;
+	isOpen: boolean;
+	onClose: () => void;
+	onConfirm: (id: string) => Promise<void>;
+}) {
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	const handleConfirm = async () => {
+		if (!entry) return;
+		setIsDeleting(true);
+		try {
+			await onConfirm(entry.id);
+			onClose();
+		} finally {
+			setIsDeleting(false);
+		}
+	};
+
+	if (!isOpen || !entry) return null;
+
+	return (
+		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+			<div className="glass rounded-lg p-6 max-w-sm w-full mx-4">
+				<h2 className="text-xl font-bold mb-2">Remove Character</h2>
+				<p className="text-foreground-muted mb-4">
+					Are you sure you want to remove{" "}
+					<span className="text-foreground font-semibold">
+						{entry.character.name}
+					</span>{" "}
+					from your collection?
+				</p>
+
+				<div className="flex gap-3">
+					<button
+						type="button"
+						onClick={onClose}
+						className="flex-1 px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={handleConfirm}
+						disabled={isDeleting}
+						className="flex-1 px-4 py-2 bg-torii-500 text-background font-semibold rounded-lg hover:bg-torii-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+					>
+						{isDeleting ? "Removing..." : "Remove"}
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 function CollectionPage() {
 	const [showImport, setShowImport] = useState(false);
+	const [showExport, setShowExport] = useState(false);
+	const [editingEntry, setEditingEntry] = useState<CollectionEntry | null>(
+		null,
+	);
+	const [deletingEntry, setDeletingEntry] = useState<CollectionEntry | null>(
+		null,
+	);
 	const [search, setSearch] = useState("");
 	const [sortBy, setSortBy] = useState("rank");
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -224,6 +565,42 @@ function CollectionPage() {
 		},
 	});
 
+	const updateMutation = useMutation({
+		mutationFn: ({
+			id,
+			...data
+		}: {
+			id: string;
+			notes?: string;
+			keyCount?: number;
+		}) => collectionApi.update(id, data),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["collection"] });
+		},
+	});
+
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => collectionApi.delete(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["collection"] });
+			queryClient.invalidateQueries({ queryKey: ["collection-stats"] });
+		},
+	});
+
+	const handleExport = async (request: CollectionExportRequest) => {
+		const data = await collectionApi.export(request);
+		const json = JSON.stringify(data, null, 2);
+		const blob = new Blob([json], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "collection-export.json";
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	};
+
 	if (authLoading) {
 		return (
 			<div className="flex items-center justify-center min-h-[60vh]">
@@ -288,6 +665,14 @@ function CollectionPage() {
 					)}
 				</div>
 				<div className="flex gap-2">
+					<button
+						type="button"
+						onClick={() => setShowExport(true)}
+						className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors"
+					>
+						<Download size={18} />
+						Export
+					</button>
 					{imageStatus &&
 						imageStatus.pending === 0 &&
 						imageStatus.stored < imageStatus.total && (
@@ -402,7 +787,12 @@ function CollectionPage() {
 				<>
 					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
 						{data.items.map((entry) => (
-							<CharacterCard key={entry.id} character={entry.character} />
+							<CharacterCard
+								key={entry.id}
+								entry={entry}
+								onEdit={setEditingEntry}
+								onDelete={setDeletingEntry}
+							/>
 						))}
 					</div>
 
@@ -438,6 +828,30 @@ function CollectionPage() {
 				onImport={importMutation.mutateAsync}
 				onClear={async () => {
 					await clearMutation.mutateAsync();
+				}}
+			/>
+
+			<ExportModal
+				isOpen={showExport}
+				onClose={() => setShowExport(false)}
+				onExport={handleExport}
+			/>
+
+			<EditModal
+				entry={editingEntry}
+				isOpen={editingEntry !== null}
+				onClose={() => setEditingEntry(null)}
+				onSave={async (id, data) => {
+					await updateMutation.mutateAsync({ id, ...data });
+				}}
+			/>
+
+			<DeleteConfirmModal
+				entry={deletingEntry}
+				isOpen={deletingEntry !== null}
+				onClose={() => setDeletingEntry(null)}
+				onConfirm={async (id) => {
+					await deleteMutation.mutateAsync(id);
 				}}
 			/>
 		</div>

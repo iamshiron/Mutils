@@ -243,6 +243,39 @@ public class MudaeParserTests {
     }
 
     [Fact]
+    public void ParseCollection_WithChaosKey_ParsesCorrectly() {
+        var data = "#500 - Test Character => 5 al, 20 img · :goldkey:   (10) 500 ka - https://mudae.net/uploads/test.png";
+
+        var result = _parser.ParseCollection(data).ToList();
+
+        result.Should().ContainSingle();
+        result[0].KeyType.Should().Be("chaoskey");
+        result[0].KeyCount.Should().Be(10);
+    }
+
+    [Fact]
+    public void ParseCollection_KeyTypeComputedFromKeyCount() {
+        var testData = new[] {
+            (1, "bronzekey"),
+            (2, "bronzekey"),
+            (3, "silverkey"),
+            (5, "silverkey"),
+            (6, "goldkey"),
+            (9, "goldkey"),
+            (10, "chaoskey"),
+            (500, "chaoskey"),
+        };
+
+        foreach (var (keyCount, expectedKeyType) in testData) {
+            var data = $"#100 - Test => 5 al, 10 img · :bronzekey:   ({keyCount}) 100 ka";
+            var result = _parser.ParseCollection(data).ToList();
+            result.Should().ContainSingle();
+            result[0].KeyType.Should().Be(expectedKeyType, $"key count {keyCount} should map to {expectedKeyType}");
+            result[0].KeyCount.Should().Be(keyCount);
+        }
+    }
+
+    [Fact]
     public void ParseCollection_WithVeryHighRank_ParsesCorrectly() {
         var data = "#85,224 - Chinami Komuro => 1 al, 9 img  · :bronzekey:   (2) 35 ka - https://mudae.net/uploads/test.png";
 

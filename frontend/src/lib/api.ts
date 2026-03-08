@@ -6,6 +6,8 @@ import type {
 	BulkKakeraImportResponse,
 	CalculatorConfig,
 	CollectionEntry,
+	CollectionExportRequest,
+	CollectionExportResponse,
 	CollectionStats,
 	CreateCalculatorConfigRequest,
 	CreateKakeraClaimRequest,
@@ -141,15 +143,24 @@ export const collectionApi = {
 		return data;
 	},
 
-	update: async (id: string, notes: string) => {
-		const { data } = await api.put<CollectionEntry>(`/collection/${id}`, {
-			notes,
-		});
-		return data;
+	update: async (id: string, data: { notes?: string; keyCount?: number }) => {
+		const { data: response } = await api.put<CollectionEntry>(
+			`/collection/${id}`,
+			data,
+		);
+		return response;
 	},
 
 	delete: async (id: string) => {
 		await api.delete(`/collection/${id}`);
+	},
+
+	export: async (request: CollectionExportRequest) => {
+		const { data } = await api.post<CollectionExportResponse>(
+			"/collection/export",
+			request,
+		);
+		return data;
 	},
 };
 

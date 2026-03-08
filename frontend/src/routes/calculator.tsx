@@ -23,12 +23,13 @@ interface CalculatorInputs {
 	antiDisabled: number;
 	silverBadge: number;
 	rubyBadge: number;
-	bwLevel: number;
 	perk2: number;
 	perk3: number;
 	perk4: number;
 	ownedTotal: number;
 	ownedDisabled: number;
+	totalRolls: number;
+	bwRollsInvested: number;
 }
 
 interface CalculationResults {
@@ -41,6 +42,10 @@ interface CalculationResults {
 	wishProb: number;
 	ownedProb: number;
 	doubleKeyChance: number;
+	bwRollsWishBonus: number;
+	bwRollsStarwishBonus: number;
+	expectedStarwishHits: number;
+	expectedWishHits: number;
 }
 
 const defaultInputs: CalculatorInputs = {
@@ -49,13 +54,92 @@ const defaultInputs: CalculatorInputs = {
 	antiDisabled: 1296,
 	silverBadge: 4,
 	rubyBadge: 2,
-	bwLevel: 2,
 	perk2: 1,
 	perk3: 0,
 	perk4: 0,
 	ownedTotal: 544,
 	ownedDisabled: 216,
+	totalRolls: 10,
+	bwRollsInvested: 0,
 };
+
+function calculateBWRollBonuses(investedRolls: number): {
+	wishBonus: number;
+	starwishBonus: number;
+} {
+	let wishBonus = 0;
+	let starwishBonus = 0;
+
+	for (let i = 1; i <= investedRolls; i++) {
+		if (i <= 5) {
+			wishBonus += 20;
+		} else if (i <= 15) {
+			wishBonus += 15;
+		} else if (i <= 100) {
+			wishBonus += 10;
+		} else if (i <= 200) {
+			wishBonus += 5;
+		} else {
+			wishBonus += 1;
+		}
+
+		if (i <= 100) {
+			starwishBonus += 10;
+		} else if (i <= 200) {
+			starwishBonus += 5;
+		} else {
+			starwishBonus += 1;
+		}
+	}
+
+	return { wishBonus, starwishBonus };
+}
+
+function calculateOptimalBW(
+	inputs: CalculatorInputs,
+	type: "wish" | "starwish",
+): number {
+	const extraDisabledFromPerk3 = inputs.perk3 * 140;
+	let effectivePool =
+		inputs.totalPool -
+		(inputs.disabledLimit + extraDisabledFromPerk3) +
+		inputs.antiDisabled;
+	if (effectivePool <= 0) effectivePool = 1;
+
+	let badgeBonus = inputs.silverBadge * 25;
+	if (inputs.rubyBadge >= 2) badgeBonus += 50;
+
+	const towerBonus = inputs.perk2 * 50;
+
+	let bestHits = 0;
+	let bestInvested = 0;
+
+	for (let invested = 0; invested <= inputs.totalRolls; invested++) {
+		const { wishBonus, starwishBonus } = calculateBWRollBonuses(invested);
+		const effectiveRolls = inputs.totalRolls - invested;
+
+		const baseMult = 1 + badgeBonus / 100;
+		const starwishBase = baseMult + towerBonus / 100;
+
+		const wishMult = baseMult + wishBonus / 100;
+		const starwishMult = starwishBase + wishBonus / 100 + starwishBonus / 100;
+
+		const wishProb = wishMult / effectivePool;
+		const starwishProb = starwishMult / effectivePool;
+
+		const hits =
+			type === "wish"
+				? wishProb * effectiveRolls
+				: starwishProb * effectiveRolls;
+
+		if (hits > bestHits) {
+			bestHits = hits;
+			bestInvested = invested;
+		}
+	}
+
+	return bestInvested;
+}
 
 function calculate(inputs: CalculatorInputs): CalculationResults {
 	const extraDisabledFromPerk3 = inputs.perk3 * 140;
@@ -68,29 +152,46 @@ function calculate(inputs: CalculatorInputs): CalculationResults {
 	let badgeBonus = inputs.silverBadge * 25;
 	if (inputs.rubyBadge >= 2) badgeBonus += 50;
 
-	const bwWishBonus = inputs.bwLevel * 20;
-	const regWishMult = 1 + badgeBonus / 100 + bwWishBonus / 100;
+	const regWishMult = 1 + badgeBonus / 100;
 
 	const towerBonus = inputs.perk2 * 50;
-	const bwStarwishBonus = inputs.bwLevel * 10;
-	const starwishMult = regWishMult + towerBonus / 100 + bwStarwishBonus / 100;
+	const starwishMult = regWishMult + towerBonus / 100;
 
 	const activeOwned = Math.max(0, inputs.ownedTotal - inputs.ownedDisabled);
 
-	const starwishProb = starwishMult / effectivePool;
-	const wishProb = regWishMult / effectivePool;
+	const { wishBonus: bwRollsWishBonus, starwishBonus: bwRollsStarwishBonus } =
+		calculateBWRollBonuses(inputs.bwRollsInvested);
+
+	const effectiveRollsPerHour = Math.max(
+		0,
+		inputs.totalRolls - inputs.bwRollsInvested,
+	);
+
+	const finalWishMult = regWishMult + bwRollsWishBonus / 100;
+	const finalStarwishMult =
+		starwishMult + bwRollsWishBonus / 100 + bwRollsStarwishBonus / 100;
+
+	const starwishProb = finalStarwishMult / effectivePool;
+	const wishProb = finalWishMult / effectivePool;
 	const ownedProb = activeOwned / effectivePool;
+
+	const expectedStarwishHits = starwishProb * effectiveRollsPerHour;
+	const expectedWishHits = wishProb * effectiveRollsPerHour;
 
 	return {
 		effectivePool,
 		badgeBonus,
-		regWishMult,
-		starwishMult,
+		regWishMult: finalWishMult,
+		starwishMult: finalStarwishMult,
 		activeOwned,
 		starwishProb,
 		wishProb,
 		ownedProb,
 		doubleKeyChance: inputs.perk4 * 10,
+		bwRollsWishBonus,
+		bwRollsStarwishBonus,
+		expectedStarwishHits,
+		expectedWishHits,
 	};
 }
 
@@ -156,12 +257,13 @@ function CalculatorPage() {
 			antiDisabled: config.antiDisabled,
 			silverBadge: config.silverBadge,
 			rubyBadge: config.rubyBadge,
-			bwLevel: config.bwLevel,
 			perk2: config.perk2,
 			perk3: config.perk3,
 			perk4: config.perk4,
 			ownedTotal: config.ownedTotal,
 			ownedDisabled: config.ownedDisabled,
+			totalRolls: config.totalRolls ?? 0,
+			bwRollsInvested: config.bwRollsInvested ?? 0,
 		});
 	};
 
@@ -205,12 +307,13 @@ function CalculatorPage() {
 									antiDisabled: config.antiDisabled ?? 0,
 									silverBadge: config.silverBadge ?? 0,
 									rubyBadge: config.rubyBadge ?? 0,
-									bwLevel: config.bwLevel ?? 0,
 									perk2: config.perk2 ?? 0,
 									perk3: config.perk3 ?? 0,
 									perk4: config.perk4 ?? 0,
 									ownedTotal: config.ownedTotal ?? 0,
 									ownedDisabled: config.ownedDisabled ?? 0,
+									totalRolls: config.totalRolls ?? 0,
+									bwRollsInvested: config.bwRollsInvested ?? 0,
 								};
 								createMutation.mutate(request);
 							});
@@ -260,6 +363,7 @@ function CalculatorPage() {
 					<PoolSettings inputs={inputs} updateInput={updateInput} />
 					<WishMultipliers inputs={inputs} updateInput={updateInput} />
 					<TowerPerks inputs={inputs} updateInput={updateInput} />
+					<RollSettings inputs={inputs} updateInput={updateInput} />
 					<OwnedCharacters inputs={inputs} updateInput={updateInput} />
 
 					<div className="glass rounded-lg p-6 lantern-top">
@@ -362,6 +466,28 @@ function CalculatorPage() {
 						variant="primary"
 					/>
 
+					{inputs.bwRollsInvested > 0 && (
+						<div className="glass rounded-lg p-4 border border-info/30">
+							<h3 className="text-sm font-medium text-foreground-muted uppercase tracking-wider mb-3">
+								$bw Roll Bonuses
+							</h3>
+							<div className="space-y-2 text-sm">
+								<div className="flex justify-between">
+									<span className="text-foreground-muted">Wish Bonus:</span>
+									<span className="text-foreground font-medium">
+										+{results.bwRollsWishBonus}%
+									</span>
+								</div>
+								<div className="flex justify-between">
+									<span className="text-foreground-muted">Starwish Bonus:</span>
+									<span className="text-foreground font-medium">
+										+{results.bwRollsWishBonus + results.bwRollsStarwishBonus}%
+									</span>
+								</div>
+							</div>
+						</div>
+					)}
+
 					<ResultCard
 						title="Specific Starwish"
 						icon={<Star size={16} className="text-warning" />}
@@ -369,6 +495,7 @@ function CalculatorPage() {
 						odds={formatOdds(results.starwishProb)}
 						mult={results.starwishMult.toFixed(2)}
 						subtext={`(+${results.badgeBonus}% from Badges)`}
+						hitsPerHour={results.expectedStarwishHits}
 						variant="warning"
 					/>
 
@@ -377,6 +504,7 @@ function CalculatorPage() {
 						percent={formatPercent(results.wishProb)}
 						odds={formatOdds(results.wishProb)}
 						mult={results.regWishMult.toFixed(2)}
+						hitsPerHour={results.expectedWishHits}
 						variant="default"
 					/>
 
@@ -443,7 +571,7 @@ function WishMultipliers({ inputs, updateInput }: InputSectionProps) {
 			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
 				Wish Multipliers
 			</h2>
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<SelectField
 					label="Silver Badge"
 					value={inputs.silverBadge}
@@ -467,14 +595,6 @@ function WishMultipliers({ inputs, updateInput }: InputSectionProps) {
 						{ value: 3, label: "Level III (+50%)" },
 						{ value: 4, label: "Level IV (+50%)" },
 					]}
-				/>
-				<InputField
-					label="Boostwish ($bw)"
-					value={inputs.bwLevel}
-					onChange={(v) => updateInput("bwLevel", v)}
-					min={0}
-					max={10}
-					title="Adds +20% standard wish and +10% starwish per level"
 				/>
 			</div>
 		</div>
@@ -529,6 +649,69 @@ function TowerPerks({ inputs, updateInput }: InputSectionProps) {
 					]}
 				/>
 			</div>
+		</div>
+	);
+}
+
+function RollSettings({ inputs, updateInput }: InputSectionProps) {
+	const handleOptimize = (type: "wish" | "starwish") => {
+		const optimal = calculateOptimalBW(inputs, type);
+		updateInput("bwRollsInvested", optimal);
+	};
+
+	return (
+		<div className="glass rounded-lg p-6 lantern-top">
+			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
+				Hourly Roll Settings
+			</h2>
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<InputField
+					label="Total Rolls Available"
+					value={inputs.totalRolls}
+					onChange={(v) => updateInput("totalRolls", v)}
+					min={0}
+					title="Total number of rolls you have per hour"
+				/>
+				<InputField
+					label="Rolls Invested in $bw"
+					value={inputs.bwRollsInvested}
+					onChange={(v) => updateInput("bwRollsInvested", v)}
+					min={0}
+					max={inputs.totalRolls}
+					title="Number of rolls invested in boostwish for bonus spawn rates"
+				/>
+			</div>
+			<div className="mt-4 flex gap-2">
+				<button
+					type="button"
+					onClick={() => handleOptimize("wish")}
+					className="flex-1 text-sm bg-night-700 hover:bg-sakura-500 text-foreground py-2 px-3 rounded transition-colors"
+				>
+					Optimize for Wish
+				</button>
+				<button
+					type="button"
+					onClick={() => handleOptimize("starwish")}
+					className="flex-1 text-sm bg-night-700 hover:bg-warning text-foreground py-2 px-3 rounded transition-colors"
+				>
+					Optimize for Starwish
+				</button>
+			</div>
+			{inputs.bwRollsInvested > 0 && (
+				<div className="mt-4 p-3 bg-info/10 border border-info/30 rounded-lg">
+					<p className="text-sm text-foreground-muted">
+						Effective rolls per hour:{" "}
+						<span className="text-foreground font-medium">
+							{Math.max(0, inputs.totalRolls - inputs.bwRollsInvested)}
+						</span>
+					</p>
+					<p className="text-xs text-foreground-subtle mt-1">
+						Each roll invested grants +20% wish spawn (decreases at thresholds:
+						15% after 5, 10% after 15, 5% after 100, 1% after 200) and +10%
+						starwish (5% after 100, 1% after 200)
+					</p>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -644,6 +827,7 @@ interface ResultCardProps {
 	mult?: string;
 	subtext?: string;
 	icon?: React.ReactNode;
+	hitsPerHour?: number;
 	variant?: "primary" | "warning" | "success" | "info" | "default";
 }
 
@@ -655,6 +839,7 @@ function ResultCard({
 	mult,
 	subtext,
 	icon,
+	hitsPerHour,
 	variant = "default",
 }: ResultCardProps) {
 	const variantStyles = {
@@ -696,6 +881,15 @@ function ResultCard({
 			{odds && (
 				<p className="text-lg text-foreground-muted mt-1 font-mono bg-background-secondary inline-block px-3 py-1 rounded-md">
 					{odds}
+				</p>
+			)}
+			{hitsPerHour !== undefined && hitsPerHour > 0 && (
+				<p className="text-sm text-foreground-muted mt-2">
+					~
+					<span className="text-foreground font-medium">
+						{hitsPerHour.toFixed(5)}
+					</span>{" "}
+					hits/hour
 				</p>
 			)}
 			{mult && (

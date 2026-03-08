@@ -53,3 +53,23 @@ public sealed record CollectionStatsDto(
     int TotalKakera,
     Dictionary<string, int> KeyDistribution
 );
+
+public sealed record CollectionExportItemDto(
+    string Name,
+    int? Kakera,
+    int? KeyCount,
+    int? Sp
+);
+
+public sealed record CollectionExportResponse(
+    int TotalCount,
+    int ExportedCount,
+    IReadOnlyList<CollectionExportItemDto> Items
+);
+
+public sealed record CollectionExportRequest(
+    int? MinKeys = null,
+    string? SortBy = "kakera",
+    string? SortOrder = "desc",
+    int? Limit = null
+);

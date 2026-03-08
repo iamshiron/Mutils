@@ -202,12 +202,13 @@ export interface CalculatorConfig {
 	antiDisabled: number;
 	silverBadge: number;
 	rubyBadge: number;
-	bwLevel: number;
 	perk2: number;
 	perk3: number;
 	perk4: number;
 	ownedTotal: number;
 	ownedDisabled: number;
+	totalRolls?: number;
+	bwRollsInvested?: number;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -219,12 +220,13 @@ export interface CreateCalculatorConfigRequest {
 	antiDisabled: number;
 	silverBadge: number;
 	rubyBadge: number;
-	bwLevel: number;
 	perk2: number;
 	perk3: number;
 	perk4: number;
 	ownedTotal: number;
 	ownedDisabled: number;
+	totalRolls: number;
+	bwRollsInvested: number;
 }
 
 export interface UpdateCalculatorConfigRequest {
@@ -234,12 +236,13 @@ export interface UpdateCalculatorConfigRequest {
 	antiDisabled?: number;
 	silverBadge?: number;
 	rubyBadge?: number;
-	bwLevel?: number;
 	perk2?: number;
 	perk3?: number;
 	perk4?: number;
 	ownedTotal?: number;
 	ownedDisabled?: number;
+	totalRolls?: number;
+	bwRollsInvested?: number;
 }
 
 export interface BulkKakeraImportRequest {
@@ -251,4 +254,24 @@ export interface BulkKakeraImportResponse {
 	imported: number;
 	skipped: number;
 	errors: string[];
+}
+
+export interface CollectionExportItem {
+	name: string;
+	kakera: number | null;
+	keyCount: number | null;
+	sp: number | null;
+}
+
+export interface CollectionExportResponse {
+	totalCount: number;
+	exportedCount: number;
+	items: CollectionExportItem[];
+}
+
+export interface CollectionExportRequest {
+	minKeys?: number;
+	sortBy?: "kakera" | "keyCount" | "sp" | "name";
+	sortOrder?: "asc" | "desc";
+	limit?: number;
 }

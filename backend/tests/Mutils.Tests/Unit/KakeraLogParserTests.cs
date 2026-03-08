@@ -306,4 +306,37 @@ public class KakeraLogParserTests {
         result[0].ClaimedAt!.Value.Day.Should().Be(22);
         result[1].ClaimedAt!.Value.Day.Should().Be(21);
     }
+
+    [Fact]
+    public void ParseKakeraLog_WithIsoDateFormat_ParsesDateCorrectly() {
+        var data = """
+             — 2025-10-11 19:08
+            :kakera:iamshiron +163 ($k)
+            Logan Yarborough
+            APP
+             — 2025-10-09 16:41
+            :kakeraT:iamshiron +218 ($k)
+            """;
+
+        var result = _parser.ParseKakeraLog(data).ToList();
+
+        result.Should().HaveCount(2);
+        result[0].Type.Should().Be(KakeraType.Blue);
+        result[0].Value.Should().Be(163);
+        result[0].ClaimedAt.Should().NotBeNull();
+        result[0].ClaimedAt!.Value.Year.Should().Be(2025);
+        result[0].ClaimedAt!.Value.Month.Should().Be(10);
+        result[0].ClaimedAt!.Value.Day.Should().Be(11);
+        result[0].ClaimedAt!.Value.Hour.Should().Be(19);
+        result[0].ClaimedAt!.Value.Minute.Should().Be(8);
+        
+        result[1].Type.Should().Be(KakeraType.Teal);
+        result[1].Value.Should().Be(218);
+        result[1].ClaimedAt.Should().NotBeNull();
+        result[1].ClaimedAt!.Value.Year.Should().Be(2025);
+        result[1].ClaimedAt!.Value.Month.Should().Be(10);
+        result[1].ClaimedAt!.Value.Day.Should().Be(9);
+        result[1].ClaimedAt!.Value.Hour.Should().Be(16);
+        result[1].ClaimedAt!.Value.Minute.Should().Be(41);
+    }
 }

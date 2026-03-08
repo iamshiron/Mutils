@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Mutils.Core.DTOs;
 using Mutils.Core.Services;
+using Mutils.Core.Helpers;
 using Mutils.Infrastructure.Data;
 
 namespace Mutils.Infrastructure.Services;
@@ -20,7 +21,8 @@ public class OptimizerService(MutilsDbContext dbContext) : IOptimizerService {
         var totalKakera = characters.Sum(c => c.Kakera ?? 0);
 
         var keyDistribution = characters
-            .Where(c => !string.IsNullOrEmpty(c.KeyType))
+            .Select(c => new { KeyType = KeyHelper.GetKeyTypeFromCount(c.KeyCount) })
+            .Where(c => c.KeyType is not null)
             .GroupBy(c => c.KeyType!)
             .ToDictionary(g => g.Key, g => g.Count());
 
@@ -88,8 +90,9 @@ public class OptimizerService(MutilsDbContext dbContext) : IOptimizerService {
         }
 
         var keyChars = characters
-            .Where(c => !string.IsNullOrEmpty(c.KeyType))
-            .OrderByDescending(c => c.Kakera ?? 0)
+            .Where(c => c.KeyCount.HasValue && c.KeyCount.Value >= 1)
+            .Select(c => new { Character = c, KeyType = KeyHelper.GetKeyTypeFromCount(c.KeyCount) })
+            .OrderByDescending(c => c.Character.Kakera ?? 0)
             .ToList();
 
         if (keyChars.Count > 0) {
@@ -98,7 +101,7 @@ public class OptimizerService(MutilsDbContext dbContext) : IOptimizerService {
                 suggestions.Add(new OptimizerSuggestionDto(
                     Id: Guid.CreateVersion7(),
                     Type: "enable",
-                    Characters: group.Select(c => c.Name).ToList(),
+                    Characters: group.Select(c => c.Character.Name).ToList(),
                     Reason: $"Enable {group.Count()} {group.Key} characters",
                     Priority: priority++
                 ));
