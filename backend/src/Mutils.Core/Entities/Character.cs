@@ -15,6 +15,7 @@ public sealed class Character : BaseEntity {
     public Guid? StoredImageId { get; set; }
     public StoredImage? StoredImage { get; set; }
     public string Source { get; set; } = "mudae";
+    public bool Disabled { get; set; } = false;
 
     public Guid? SeriesId { get; set; } = null;
 

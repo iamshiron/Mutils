@@ -9,6 +9,7 @@ namespace Mutils.Infrastructure.Services;
 public class MinioStorageService : IStorageService {
     private readonly IMinioClient _minioClient;
     private readonly ILogger<MinioStorageService> _logger;
+    private readonly HashSet<string> _verifiedBuckets = [];
 
     public MinioStorageService(IMinioClient minioClient, ILogger<MinioStorageService> logger) {
         _minioClient = minioClient;
@@ -17,6 +18,8 @@ public class MinioStorageService : IStorageService {
 
     public async Task<StoredImage?> StoreImageAsync(string url, string bucketName, CancellationToken cancellationToken = default) {
         try {
+            await EnsureBucketExistsAsync(bucketName, cancellationToken);
+
             using var httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(30);
 
@@ -55,6 +58,22 @@ public class MinioStorageService : IStorageService {
             _logger.LogError(ex, "Failed to store image from {Url}", url);
             return null;
         }
+    }
+
+    private async Task EnsureBucketExistsAsync(string bucketName, CancellationToken cancellationToken) {
+        if (_verifiedBuckets.Contains(bucketName))
+            return;
+
+        var bucketExistsArgs = new BucketExistsArgs().WithBucket(bucketName);
+        var exists = await _minioClient.BucketExistsAsync(bucketExistsArgs, cancellationToken);
+
+        if (!exists) {
+            _logger.LogInformation("Creating MinIO bucket {BucketName}", bucketName);
+            var makeBucketArgs = new MakeBucketArgs().WithBucket(bucketName);
+            await _minioClient.MakeBucketAsync(makeBucketArgs, cancellationToken);
+        }
+
+        _verifiedBuckets.Add(bucketName);
     }
 
     public async Task<Stream?> GetImageAsync(string bucketName, string objectKey, CancellationToken cancellationToken = default) {

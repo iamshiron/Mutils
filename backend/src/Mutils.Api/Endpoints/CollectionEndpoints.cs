@@ -20,10 +20,22 @@ public static class CollectionEndpoints {
             string? search,
             string? sortBy,
             string? sortOrder,
+            int? minKeys,
+            int? minKakera,
+            bool? isDisabled,
             int page = 1,
             int pageSize = 50) => {
                 var userId = GetUserId(user);
                 if (userId is null) return Results.Unauthorized();
+
+                var activeDisableList = await db.DisableLists
+                    .Where(l => l.UserId == userId && l.IsActive)
+                    .Select(l => l.Content)
+                    .FirstOrDefaultAsync();
+
+                var disabledNames = activeDisableList?
+                    .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
 
                 var query = db.CollectionEntries
                     .Include(e => e.Character)
@@ -31,6 +43,14 @@ public static class CollectionEndpoints {
 
                 if (!string.IsNullOrEmpty(search)) {
                     query = query.Where(e => e.Character.Name.Contains(search));
+                }
+
+                if (minKeys.HasValue) {
+                    query = query.Where(e => e.Character.KeyCount >= minKeys.Value);
+                }
+
+                if (minKakera.HasValue) {
+                    query = query.Where(e => e.Character.Kakera >= minKakera.Value);
                 }
 
                 sortBy ??= "rank";
@@ -93,27 +113,35 @@ public static class CollectionEndpoints {
                         )
                     );
 
-                var items = entries.Select(e => new CollectionEntryDto(
-                    e.Id,
-                    new CharacterDto(
-                        e.Character.Id,
-                        e.Character.Name,
-                        e.Character.Rank,
-                        e.Character.Claims,
-                        e.Character.Images,
-                        e.Character.Gifs,
-                        e.Character.SeriesCount,
-                        e.Character.KeyType,
-                        e.Character.KeyCount,
-                        e.Character.Kakera,
-                        e.Character.Sp,
-                        e.Character.OriginalImageUrl,
-                        e.Character.StoredImageId,
-                        statsPerCharacter.GetValueOrDefault(e.Character.Id)
-                    ),
-                    e.AcquiredAt,
-                    e.Notes
-                )).ToList();
+                var items = entries.Select(e => {
+                    var isCharDisabled = disabledNames.Contains(e.Character.Name);
+                    return new CollectionEntryDto(
+                        e.Id,
+                        new CharacterDto(
+                            e.Character.Id,
+                            e.Character.Name,
+                            e.Character.Rank,
+                            e.Character.Claims,
+                            e.Character.Images,
+                            e.Character.Gifs,
+                            e.Character.SeriesCount,
+                            e.Character.KeyType,
+                            e.Character.KeyCount,
+                            e.Character.Kakera,
+                            e.Character.Sp,
+                            e.Character.OriginalImageUrl,
+                            e.Character.StoredImageId,
+                            statsPerCharacter.GetValueOrDefault(e.Character.Id)
+                        ),
+                        e.AcquiredAt,
+                        e.Notes,
+                        isCharDisabled
+                    );
+                }).ToList();
+
+                if (isDisabled.HasValue) {
+                    items = items.Where(e => e.IsDisabled == isDisabled.Value).ToList();
+                }
 
                 return Results.Ok(new PaginatedResponse<CollectionEntryDto>(
                     items, total, page, pageSize, totalPages
@@ -138,10 +166,22 @@ public static class CollectionEndpoints {
                     .GroupBy(c => c.KeyType!)
                     .ToDictionary(g => g.Key, g => g.Count());
 
-return Results.Ok(new CollectionStatsDto(
+                var activeDisableList = await db.DisableLists
+                    .Where(l => l.UserId == userId && l.IsActive)
+                    .Select(l => l.Content)
+                    .FirstOrDefaultAsync();
+
+                var disabledNames = activeDisableList?
+                    .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+
+                var disabledCount = entries.Count(c => disabledNames.Contains(c.Name));
+
+                return Results.Ok(new CollectionStatsDto(
                     entries.Count,
                     entries.Sum(c => c.Kakera ?? 0),
-                    keyDistribution
+                    keyDistribution,
+                    disabledCount
                 ));
             });
 
@@ -163,6 +203,10 @@ return Results.Ok(new CollectionStatsDto(
 
                 if (request.MinKeys.HasValue) {
                     filteredQuery = filteredQuery.Where(e => e.Character.KeyCount >= request.MinKeys);
+                }
+
+                if (request.ExcludeDisabled == true) {
+                    filteredQuery = filteredQuery.Where(e => !e.Character.Disabled);
                 }
 
                 var sortBy = request.SortBy?.ToLower() ?? "kakera";
@@ -192,7 +236,8 @@ return Results.Ok(new CollectionStatsDto(
                         e.Character.Name,
                         e.Character.Kakera,
                         e.Character.KeyCount,
-                        e.Character.Sp
+                        e.Character.Sp,
+                        e.Character.Disabled
                     ))
                     .ToListAsync();
 
@@ -213,6 +258,7 @@ return Results.Ok(new CollectionStatsDto(
                 var skipped = 0;
                 var updated = 0;
                 var imageJobsCreated = 0;
+                var disabledImported = 0;
 
                 var characterNames = parsed.Select(p => p.Name).Distinct().ToList();
                 var existingCharacters = await db.Characters
@@ -325,12 +371,42 @@ return Results.Ok(new CollectionStatsDto(
                 if (newEntries.Count > 0)
                     db.CollectionEntries.AddRange(newEntries);
 
+                if (!string.IsNullOrWhiteSpace(request.DisabledCharacters)) {
+                    var disabledNames = parser.ParseDisabledCharacters(request.DisabledCharacters).ToList();
+                    if (disabledNames.Count > 0) {
+                        var existingDisableList = await db.DisableLists
+                            .FirstOrDefaultAsync(l => l.UserId == userId && l.Name == "Disabled Characters");
+
+                        var content = string.Join("\n", disabledNames);
+
+                        if (existingDisableList is not null) {
+                            var existingNames = existingDisableList.Content
+                                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                .ToHashSet();
+                            var newNames = disabledNames.Where(n => !existingNames.Contains(n)).ToList();
+                            if (newNames.Count > 0) {
+                                existingDisableList.Content = existingDisableList.Content + "\n" + string.Join("\n", newNames);
+                                disabledImported = newNames.Count;
+                            }
+                        } else {
+                            var newDisableList = new Core.Entities.DisableList {
+                                UserId = userId.Value,
+                                Name = "Disabled Characters",
+                                Content = content,
+                                IsActive = true
+                            };
+                            db.DisableLists.Add(newDisableList);
+                            disabledImported = disabledNames.Count;
+                        }
+                    }
+                }
+
                 await db.SaveChangesAsync();
 
-                Logger.LogInformation("Import completed: {Imported} imported, {Skipped} skipped, {Updated} updated, {ImagesQueued} images queued",
-                    imported, skipped, updated, imageJobsCreated);
+                Logger.LogInformation("Import completed: {Imported} imported, {Skipped} skipped, {Updated} updated, {ImagesQueued} images queued, {DisabledImported} disabled",
+                    imported, skipped, updated, imageJobsCreated, disabledImported);
 
-                return Results.Ok(new ImportResponse(imported, skipped, updated, new List<string>(), imageJobsCreated));
+                return Results.Ok(new ImportResponse(imported, skipped, updated, new List<string>(), imageJobsCreated, disabledImported > 0 ? disabledImported : null));
             });
 
         group.MapPost("/process-images", async (

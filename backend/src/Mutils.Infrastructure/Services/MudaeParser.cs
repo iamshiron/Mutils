@@ -18,6 +18,27 @@ public partial class MudaeParser : IMudaeParser {
         }
     }
 
+    public IEnumerable<string> ParseDisabledCharacters(string data) {
+        var lines = data.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines) {
+            var trimmed = line.Trim();
+            if (string.IsNullOrEmpty(trimmed))
+                continue;
+
+            var name = ParseDisabledLine(trimmed);
+            if (name is not null)
+                yield return name;
+        }
+    }
+
+    private static string? ParseDisabledLine(string line) {
+        var match = DisabledLineRegex().Match(line);
+        if (!match.Success)
+            return null;
+
+        return match.Groups["name"].Value.Trim();
+    }
+
     private static ParsedCharacter? ParseLine(string line) {
         var match = CollectionLineRegex().Match(line);
         if (!match.Success)
@@ -58,4 +79,9 @@ public partial class MudaeParser : IMudaeParser {
         @"^#(?<rank>[\d,]+)\s*-\s*(?<name>.+?)\s*=>\s*(?<claims>\d+)\s*al(?:\s*,\s*(?<images>\d+)\s*img(?:\s*\+\s*(?<gifs>\d+)\s*gif)?)?(?:\s*,\s*(?<series>\d+)\s*series)?(?:\s*·\s*:(?<keyType>\w+key):\s*\((?<keyCount>\d+)\))?\s*(?<kakera>[\d,]+)\s*ka(?:\s*(?<sp>[\d,]+)\s*sp)?(?:\s*-\s*(?<imageUrl>https?://\S+))?\s*$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex CollectionLineRegex();
+
+    [GeneratedRegex(
+        @"^(?<name>.+?)\s*🚫\s*$",
+        RegexOptions.Compiled)]
+    private static partial Regex DisabledLineRegex();
 }

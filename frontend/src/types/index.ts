@@ -37,6 +37,7 @@ export interface CollectionEntry {
 	notes: string | null;
 	createdAt: string;
 	updatedAt: string;
+	isDisabled?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -89,12 +90,14 @@ export interface ImportResponse {
 	updated: number;
 	errors: string[];
 	imagesQueued: number;
+	disabledImported?: number;
 }
 
 export interface CollectionStats {
 	totalCharacters: number;
 	totalKakera: number;
 	keyDistribution: Record<string, number>;
+	disabledCount?: number;
 }
 
 export interface OptimizerAnalysis {
@@ -261,6 +264,7 @@ export interface CollectionExportItem {
 	kakera: number | null;
 	keyCount: number | null;
 	sp: number | null;
+	isDisabled: boolean;
 }
 
 export interface CollectionExportResponse {
@@ -274,4 +278,5 @@ export interface CollectionExportRequest {
 	sortBy?: "kakera" | "keyCount" | "sp" | "name";
 	sortOrder?: "asc" | "desc";
 	limit?: number;
+	excludeDisabled?: boolean;
 }

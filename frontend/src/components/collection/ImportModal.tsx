@@ -1,11 +1,14 @@
+import { Prohibit, Trash, Upload, Warning, X } from "@phosphor-icons/react";
 import { useState } from "react";
-import { X, Upload, Trash, Warning } from "@phosphor-icons/react";
 import type { ImportResponse } from "@/types";
 
 interface ImportModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onImport: (data: string) => Promise<ImportResponse>;
+	onImport: (
+		data: string,
+		disabledCharacters?: string,
+	) => Promise<ImportResponse>;
 	onClear: () => Promise<void>;
 }
 
@@ -16,6 +19,7 @@ export function ImportModal({
 	onClear,
 }: ImportModalProps) {
 	const [data, setData] = useState("");
+	const [disabledData, setDisabledData] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [result, setResult] = useState<ImportResponse | null>(null);
 	const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -23,15 +27,16 @@ export function ImportModal({
 	if (!isOpen) return null;
 
 	const handleImport = async () => {
-		if (!data.trim()) return;
+		if (!data.trim() && !disabledData.trim()) return;
 		setIsLoading(true);
 		try {
-			const res = await onImport(data);
+			const res = await onImport(data, disabledData);
 			setResult(res);
 			if (res.imported > 0 || res.updated > 0) {
 				setData("");
+				setDisabledData("");
 			}
-		} catch (error) {
+		} catch {
 			setResult({
 				imported: 0,
 				skipped: 0,
@@ -55,7 +60,7 @@ export function ImportModal({
 				errors: [],
 				imagesQueued: 0,
 			});
-		} catch (error) {
+		} catch {
 			setResult({
 				imported: 0,
 				skipped: 0,
@@ -69,6 +74,7 @@ export function ImportModal({
 
 	const handleClose = () => {
 		setData("");
+		setDisabledData("");
 		setResult(null);
 		setShowClearConfirm(false);
 		onClose();
@@ -110,6 +116,31 @@ export function ImportModal({
 								className="w-full h-48 p-3 bg-background text-foreground rounded-lg border border-border focus:border-sakura-500 focus:ring-1 focus:ring-sakura-500 outline-none resize-none font-mono text-sm"
 							/>
 
+							<div className="mt-4 pt-4 border-t border-border">
+								<div className="flex items-center gap-2 mb-2">
+									<Prohibit size={16} className="text-torii-400" />
+									<p className="text-foreground-muted text-sm">
+										Disabled Characters (optional)
+									</p>
+								</div>
+								<p className="text-foreground-muted text-sm mb-3">
+									Run{" "}
+									<code className="px-1.5 py-0.5 bg-background-tertiary rounded text-sakura-400 font-mono text-xs">
+										$mmxs
+									</code>{" "}
+									in Discord to get your disabled list.
+								</p>
+
+								<textarea
+									value={disabledData}
+									onChange={(e) => setDisabledData(e.target.value)}
+									placeholder={`Karlach  🚫
+Assassin Coli  🚫
+Elizabeth  🚫`}
+									className="w-full h-32 p-3 bg-background text-foreground rounded-lg border border-border focus:border-sakura-500 focus:ring-1 focus:ring-sakura-500 outline-none resize-none font-mono text-sm"
+								/>
+							</div>
+
 							{result && (
 								<div
 									className={`mt-4 p-4 rounded-lg ${result.errors.length > 0 ? "bg-torii-500/10 border border-torii-500/30" : "bg-success/10 border border-success/30"}`}
@@ -129,6 +160,12 @@ export function ImportModal({
 												Images queued: <strong>{result.imagesQueued}</strong>
 											</span>
 										)}
+										{result.disabledImported !== undefined &&
+											result.disabledImported > 0 && (
+												<span className="text-torii-400">
+													Disabled: <strong>{result.disabledImported}</strong>
+												</span>
+											)}
 									</div>
 									{result.errors.length > 0 && (
 										<div className="mt-2 text-sm text-torii-300">
@@ -193,7 +230,7 @@ export function ImportModal({
 							<button
 								type="button"
 								onClick={handleImport}
-								disabled={isLoading || !data.trim()}
+								disabled={isLoading || (!data.trim() && !disabledData.trim())}
 								className="flex items-center gap-2 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors disabled:opacity-50"
 							>
 								<Upload size={18} />

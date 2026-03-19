@@ -4,7 +4,8 @@ public sealed record CollectionEntryDto(
     Guid Id,
     CharacterDto Character,
     DateTime? AcquiredAt,
-    string? Notes
+    string? Notes,
+    bool IsDisabled = false
 );
 
 public sealed record CharacterDto(
@@ -38,27 +39,30 @@ public sealed record PaginatedResponse<T>(
     int TotalPages
 );
 
-public sealed record ImportRequest(string Data);
+public sealed record ImportRequest(string Data, string? DisabledCharacters = null);
 
 public sealed record ImportResponse(
     int Imported,
     int Skipped,
     int Updated,
     IReadOnlyList<string> Errors,
-    int ImagesQueued = 0
+    int ImagesQueued = 0,
+    int? DisabledImported = null
 );
 
 public sealed record CollectionStatsDto(
     int TotalCharacters,
     int TotalKakera,
-    Dictionary<string, int> KeyDistribution
+    Dictionary<string, int> KeyDistribution,
+    int DisabledCount = 0
 );
 
 public sealed record CollectionExportItemDto(
     string Name,
     int? Kakera,
     int? KeyCount,
-    int? Sp
+    int? Sp,
+    bool IsDisabled
 );
 
 public sealed record CollectionExportResponse(
@@ -71,5 +75,6 @@ public sealed record CollectionExportRequest(
     int? MinKeys = null,
     string? SortBy = "kakera",
     string? SortOrder = "desc",
-    int? Limit = null
+    int? Limit = null,
+    bool? ExcludeDisabled = null
 );

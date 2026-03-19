@@ -2,6 +2,7 @@ import {
 	CaretDown,
 	Download,
 	FolderOpen,
+	Funnel,
 	Images,
 	Key,
 	MagnifyingGlass,
@@ -63,14 +64,25 @@ const CharacterCard = memo(function CharacterCard({
 		? `/api/collection/images/${character.storedImageId}`
 		: character.imageUrl;
 
+	const isDisabled = entry.isDisabled;
+
 	return (
-		<div className="glass rounded-lg p-4 lantern-top hover:shadow-glow-sakura transition-all group">
-			<div className="aspect-square bg-background-tertiary rounded-md mb-3 flex items-center justify-center overflow-hidden">
+		<div
+			className={`glass rounded-lg p-4 lantern-top hover:shadow-glow-sakura transition-all group ${isDisabled ? "ring-2 ring-torii-500/50 bg-torii-500/5" : ""}`}
+		>
+			{isDisabled && (
+				<div className="absolute top-2 right-2 z-10">
+					<span className="px-2 py-0.5 text-xs font-semibold bg-torii-500/20 text-torii-300 rounded-full border border-torii-500/30">
+						Disabled
+					</span>
+				</div>
+			)}
+			<div className="aspect-square bg-background-tertiary rounded-md mb-3 flex items-center justify-center overflow-hidden relative">
 				{imageSrc ? (
 					<img
 						src={imageSrc}
 						alt={character.name}
-						className="w-full h-full object-cover rounded-md group-hover:scale-105 transition-transform"
+						className={`w-full h-full object-cover rounded-md group-hover:scale-105 transition-transform ${isDisabled ? "opacity-60" : ""}`}
 						loading="lazy"
 					/>
 				) : (
@@ -78,7 +90,10 @@ const CharacterCard = memo(function CharacterCard({
 				)}
 			</div>
 			<div className="flex items-start justify-between gap-2">
-				<h3 className="font-semibold truncate" title={character.name}>
+				<h3
+					className={`font-semibold truncate ${isDisabled ? "text-torii-300" : ""}`}
+					title={character.name}
+				>
 					{character.name}
 				</h3>
 				{character.keyType && (
@@ -194,6 +209,7 @@ function ExportModal({
 	const [sortOrder, setSortOrder] =
 		useState<CollectionExportRequest["sortOrder"]>("desc");
 	const [limit, setLimit] = useState<number | "">("");
+	const [excludeDisabled, setExcludeDisabled] = useState(false);
 	const [isExporting, setIsExporting] = useState(false);
 
 	const handleExport = async () => {
@@ -204,6 +220,7 @@ function ExportModal({
 				sortBy,
 				sortOrder,
 				limit: limit === "" ? undefined : limit,
+				excludeDisabled,
 			});
 			onClose();
 		} finally {
@@ -285,6 +302,22 @@ function ExportModal({
 							min={1}
 							className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
 						/>
+					</div>
+
+					<div className="flex items-center gap-2">
+						<input
+							type="checkbox"
+							id="exclude-disabled"
+							checked={excludeDisabled}
+							onChange={(e) => setExcludeDisabled(e.target.checked)}
+							className="w-4 h-4 rounded border-border bg-background-tertiary accent-sakura-500"
+						/>
+						<label
+							htmlFor="exclude-disabled"
+							className="text-sm text-foreground-muted"
+						>
+							Exclude disabled characters
+						</label>
 					</div>
 				</div>
 
@@ -488,6 +521,7 @@ function DeleteConfirmModal({
 function CollectionPage() {
 	const [showImport, setShowImport] = useState(false);
 	const [showExport, setShowExport] = useState(false);
+	const [showFilters, setShowFilters] = useState(false);
 	const [editingEntry, setEditingEntry] = useState<CollectionEntry | null>(
 		null,
 	);
@@ -498,6 +532,11 @@ function CollectionPage() {
 	const [sortBy, setSortBy] = useState("rank");
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 	const [page, setPage] = useState(1);
+	const [minKeys, setMinKeys] = useState<number | "">("");
+	const [minKakera, setMinKakera] = useState<number | "">("");
+	const [disabledFilter, setDisabledFilter] = useState<
+		"all" | "disabled" | "enabled"
+	>("all");
 	const queryClient = useQueryClient();
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
 	const navigate = useNavigate();
@@ -506,12 +545,21 @@ function CollectionPage() {
 
 	useEffect(() => {
 		setPage(1);
-	}, [debouncedSearch]);
+	}, [debouncedSearch, minKeys, minKakera, disabledFilter]);
 
 	const { data, isLoading, error } = useQuery({
 		queryKey: [
 			"collection",
-			{ search: debouncedSearch, sortBy, sortOrder, page },
+			{
+				search: debouncedSearch,
+				sortBy,
+				sortOrder,
+				page,
+				minKeys: minKeys || undefined,
+				minKakera: minKakera || undefined,
+				isDisabled:
+					disabledFilter === "all" ? undefined : disabledFilter === "disabled",
+			},
 		],
 		queryFn: () =>
 			collectionApi.get({
@@ -520,6 +568,10 @@ function CollectionPage() {
 				sortOrder,
 				page,
 				pageSize: 60,
+				minKeys: minKeys || undefined,
+				minKakera: minKakera || undefined,
+				isDisabled:
+					disabledFilter === "all" ? undefined : disabledFilter === "disabled",
 			}),
 		enabled: isAuthenticated,
 		placeholderData: keepPreviousData,
@@ -542,7 +594,13 @@ function CollectionPage() {
 	});
 
 	const importMutation = useMutation({
-		mutationFn: collectionApi.import,
+		mutationFn: ({
+			data,
+			disabledCharacters,
+		}: {
+			data: string;
+			disabledCharacters?: string;
+		}) => collectionApi.import(data, disabledCharacters),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["collection"] });
 			queryClient.invalidateQueries({ queryKey: ["collection-stats"] });
@@ -747,6 +805,14 @@ function CollectionPage() {
 						className="w-full pl-10 pr-4 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 focus:ring-1 focus:ring-sakura-500 outline-none"
 					/>
 				</div>
+				<button
+					type="button"
+					onClick={() => setShowFilters(!showFilters)}
+					className={`p-2 border rounded-lg transition-colors ${showFilters ? "bg-sakura-500/20 border-sakura-500 text-sakura-400" : "bg-background-tertiary border-border hover:border-sakura-500"}`}
+					title="Filters"
+				>
+					<Funnel size={20} />
+				</button>
 				<select
 					value={sortBy}
 					onChange={(e) => setSortBy(e.target.value)}
@@ -767,6 +833,92 @@ function CollectionPage() {
 					<SortAscending size={20} />
 				</button>
 			</div>
+
+			{showFilters && (
+				<div className="glass rounded-lg p-4 mb-6">
+					<div className="flex items-center gap-6 flex-wrap">
+						<div className="flex items-center gap-2">
+							<label
+								htmlFor="filter-min-keys"
+								className="text-sm text-foreground-muted"
+							>
+								Min Keys:
+							</label>
+							<input
+								id="filter-min-keys"
+								type="number"
+								value={minKeys}
+								onChange={(e) =>
+									setMinKeys(
+										e.target.value === "" ? "" : Number(e.target.value),
+									)
+								}
+								placeholder="0"
+								min={0}
+								className="w-20 px-2 py-1 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none text-sm"
+							/>
+						</div>
+						<div className="flex items-center gap-2">
+							<label
+								htmlFor="filter-min-kakera"
+								className="text-sm text-foreground-muted"
+							>
+								Min Kakera:
+							</label>
+							<input
+								id="filter-min-kakera"
+								type="number"
+								value={minKakera}
+								onChange={(e) =>
+									setMinKakera(
+										e.target.value === "" ? "" : Number(e.target.value),
+									)
+								}
+								placeholder="0"
+								min={0}
+								className="w-24 px-2 py-1 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none text-sm"
+							/>
+						</div>
+						<div className="flex items-center gap-2">
+							<label
+								htmlFor="filter-disabled"
+								className="text-sm text-foreground-muted"
+							>
+								Status:
+							</label>
+							<select
+								id="filter-disabled"
+								value={disabledFilter}
+								onChange={(e) =>
+									setDisabledFilter(
+										e.target.value as "all" | "disabled" | "enabled",
+									)
+								}
+								className="px-3 py-1 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none text-sm"
+							>
+								<option value="all">All</option>
+								<option value="disabled">Disabled Only</option>
+								<option value="enabled">Enabled Only</option>
+							</select>
+						</div>
+						{(minKeys !== "" ||
+							minKakera !== "" ||
+							disabledFilter !== "all") && (
+							<button
+								type="button"
+								onClick={() => {
+									setMinKeys("");
+									setMinKakera("");
+									setDisabledFilter("all");
+								}}
+								className="text-sm text-torii-400 hover:text-torii-300 transition-colors"
+							>
+								Clear Filters
+							</button>
+						)}
+					</div>
+				</div>
+			)}
 
 			{!data?.items.length ? (
 				<div className="flex flex-col items-center justify-center py-16 text-center">
@@ -825,7 +977,9 @@ function CollectionPage() {
 			<ImportModal
 				isOpen={showImport}
 				onClose={() => setShowImport(false)}
-				onImport={importMutation.mutateAsync}
+				onImport={async (data, disabledCharacters) => {
+					return importMutation.mutateAsync({ data, disabledCharacters });
+				}}
 				onClear={async () => {
 					await clearMutation.mutateAsync();
 				}}

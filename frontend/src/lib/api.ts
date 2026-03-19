@@ -100,6 +100,9 @@ export const collectionApi = {
 		sortOrder?: "asc" | "desc";
 		page?: number;
 		pageSize?: number;
+		minKeys?: number;
+		minKakera?: number;
+		isDisabled?: boolean;
 	}) => {
 		const { data } = await api.get<PaginatedResponse<CollectionEntry>>(
 			"/collection",
@@ -113,9 +116,10 @@ export const collectionApi = {
 		return data;
 	},
 
-	import: async (data: string) => {
+	import: async (data: string, disabledCharacters?: string) => {
 		const response = await api.post<ImportResponse>("/collection/import", {
 			data,
+			disabledCharacters,
 		});
 		return response.data;
 	},

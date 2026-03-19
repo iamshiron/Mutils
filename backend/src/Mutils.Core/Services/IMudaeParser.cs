@@ -2,6 +2,7 @@ namespace Mutils.Core.Services;
 
 public interface IMudaeParser {
     IEnumerable<ParsedCharacter> ParseCollection(string data);
+    IEnumerable<string> ParseDisabledCharacters(string data);
 }
 
 public record ParsedCharacter(
