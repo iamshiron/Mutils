@@ -13,6 +13,7 @@ import {
 	Trash,
 	Upload,
 	X,
+	XIcon,
 } from "@phosphor-icons/react";
 import {
 	keepPreviousData,
@@ -665,6 +666,8 @@ function CollectionPage() {
 				minKakera: minKakera || undefined,
 				isDisabled:
 					disabledFilter === "all" ? undefined : disabledFilter === "disabled",
+				keyTypes:
+					selectedKeyTypes.length > 0 ? selectedKeyTypes.join(",") : undefined,
 			},
 		],
 		queryFn: () =>
@@ -678,6 +681,8 @@ function CollectionPage() {
 				minKakera: minKakera || undefined,
 				isDisabled:
 					disabledFilter === "all" ? undefined : disabledFilter === "disabled",
+				keyTypes:
+					selectedKeyTypes.length > 0 ? selectedKeyTypes.join(",") : undefined,
 			}),
 		enabled: isAuthenticated,
 		placeholderData: keepPreviousData,
@@ -877,29 +882,34 @@ function CollectionPage() {
 
 				{stats && Object.keys(stats.keyDistribution).length > 0 && (
 					<div className="flex gap-2 flex-wrap">
-						{Object.entries(stats.keyDistribution).map(([key, count]) => {
-							const config = KEY_TYPE_CONFIG[key] || {
-								label: key.replace("key", ""),
-								color: "text-muted-foreground",
-								bgColor: "bg-muted/50",
-							};
-							const isSelected = selectedKeyTypes.includes(key);
-							return (
-								<button
-									key={key}
-									onClick={() => toggleKeyType(key)}
-									className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-										isSelected
-											? `${config.bgColor} ${config.color} ring-1 ring-current/20`
-											: "bg-muted/30 text-muted-foreground hover:bg-muted/50"
-									}`}
-								>
-									<Key size={12} weight="fill" className={config.color} />
-									<span>{config.label}</span>
-									<span className="opacity-60">{count}</span>
-								</button>
-							);
-						})}
+						{Object.entries(stats.keyDistribution)
+							.sort(([a], [b]) => {
+								const order = ["bronzekey", "silverkey", "goldkey", "chaoskey"];
+								return order.indexOf(a) - order.indexOf(b);
+							})
+							.map(([key, count]) => {
+								const config = KEY_TYPE_CONFIG[key] || {
+									label: key.replace("key", ""),
+									color: "text-muted-foreground",
+									bgColor: "bg-muted/50",
+								};
+								const isSelected = selectedKeyTypes.includes(key);
+								return (
+									<button
+										key={key}
+										onClick={() => toggleKeyType(key)}
+										className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+											isSelected
+												? `${config.bgColor} ${config.color} ring-1 ring-current/20`
+												: "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+										}`}
+									>
+										<Key size={12} weight="fill" className={config.color} />
+										<span>{config.label}</span>
+										<span className="opacity-60">{count}</span>
+									</button>
+								);
+							})}
 					</div>
 				)}
 			</div>

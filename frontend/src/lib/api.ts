@@ -106,6 +106,7 @@ export const collectionApi = {
 		minKeys?: number;
 		minKakera?: number;
 		isDisabled?: boolean;
+		keyTypes?: string;
 	}) => {
 		const { data } = await api.get<PaginatedResponse<CollectionEntry>>(
 			"/collection",

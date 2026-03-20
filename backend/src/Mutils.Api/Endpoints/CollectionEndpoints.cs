@@ -23,19 +23,11 @@ public static class CollectionEndpoints {
             int? minKeys,
             int? minKakera,
             bool? isDisabled,
+            string? keyTypes,
             int page = 1,
             int pageSize = 50) => {
             var userId = GetUserId(user);
             if (userId is null) return Results.Unauthorized();
-
-            var activeDisableList = await db.DisableLists
-                .Where(l => l.UserId == userId && l.IsActive)
-                .Select(l => l.Content)
-                .FirstOrDefaultAsync();
-
-            var disabledNames = activeDisableList?
-                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
 
             var query = db.CollectionEntries
                 .Include(e => e.Character)
@@ -52,6 +44,26 @@ public static class CollectionEndpoints {
 
             if (minKakera.HasValue) {
                 query = query.Where(e => e.Character.Kakera >= minKakera.Value);
+            }
+
+            if (isDisabled.HasValue) {
+                query = query.Where(e => e.Character.Disabled == isDisabled.Value);
+            }
+
+            if (!string.IsNullOrEmpty(keyTypes)) {
+                var keyTypeList = keyTypes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                
+                var hasBronze = keyTypeList.Contains("bronzekey");
+                var hasSilver = keyTypeList.Contains("silverkey");
+                var hasGold = keyTypeList.Contains("goldkey");
+                var hasChaos = keyTypeList.Contains("chaoskey");
+                
+                query = query.Where(e => 
+                    (hasBronze && e.Character.KeyCount >= 1 && e.Character.KeyCount < 3) ||
+                    (hasSilver && e.Character.KeyCount >= 3 && e.Character.KeyCount < 6) ||
+                    (hasGold && e.Character.KeyCount >= 6 && e.Character.KeyCount < 10) ||
+                    (hasChaos && e.Character.KeyCount >= 10)
+                );
             }
 
             sortBy ??= "rank";
@@ -114,36 +126,29 @@ public static class CollectionEndpoints {
                     )
                 );
 
-            var items = entries.Select(e => {
-                var isCharDisabled = disabledNames.Contains(e.Character.Name);
-                return new CollectionEntryDto(
-                    e.Id,
-                    new CharacterDto(
-                        e.Character.Id,
-                        e.Character.Name,
-                        e.Character.Rank,
-                        e.Character.Claims,
-                        e.Character.Images,
-                        e.Character.Gifs,
-                        e.Character.SeriesCount,
-                        e.Character.KeyType,
-                        e.Character.KeyCount,
-                        e.Character.Kakera,
-                        e.Character.Sp,
-                        e.Character.OriginalImageUrl,
-                        e.Character.StoredImageId,
-                        e.Character.Series?.Name,
-                        statsPerCharacter.GetValueOrDefault(e.Character.Id)
-                    ),
-                    e.AcquiredAt,
-                    e.Notes,
-                    isCharDisabled
-                );
-            }).ToList();
-
-            if (isDisabled.HasValue) {
-                items = items.Where(e => e.IsDisabled == isDisabled.Value).ToList();
-            }
+            var items = entries.Select(e => new CollectionEntryDto(
+                e.Id,
+                new CharacterDto(
+                    e.Character.Id,
+                    e.Character.Name,
+                    e.Character.Rank,
+                    e.Character.Claims,
+                    e.Character.Images,
+                    e.Character.Gifs,
+                    e.Character.SeriesCount,
+                    e.Character.KeyType,
+                    e.Character.KeyCount,
+                    e.Character.Kakera,
+                    e.Character.Sp,
+                    e.Character.OriginalImageUrl,
+                    e.Character.StoredImageId,
+                    e.Character.Series?.Name,
+                    statsPerCharacter.GetValueOrDefault(e.Character.Id)
+                ),
+                e.AcquiredAt,
+                e.Notes,
+                e.Character.Disabled
+            )).ToList();
 
             return Results.Ok(new PaginatedResponse<CollectionEntryDto>(
                 items, total, page, pageSize, totalPages
@@ -255,6 +260,7 @@ public static class CollectionEndpoints {
             if (userId is null) return Results.Unauthorized();
 
             var parsed = parser.ParseCollection(request.Data).ToList();
+            Logger.LogInformation("Parsed {Count} characters from import data", parsed.Count);
 
             var imported = 0;
             var skipped = 0;
@@ -375,6 +381,7 @@ public static class CollectionEndpoints {
 
             if (!string.IsNullOrWhiteSpace(request.DisabledCharacters)) {
                 var disabledNames = parser.ParseDisabledCharacters(request.DisabledCharacters).ToList();
+                Logger.LogInformation("Parsed {Count} disabled characters from import data", disabledNames.Count);
                 if (disabledNames.Count > 0) {
                     var existingDisableList = await db.DisableLists
                         .FirstOrDefaultAsync(l => l.UserId == userId && l.Name == "Disabled Characters");
@@ -400,6 +407,19 @@ public static class CollectionEndpoints {
                         db.DisableLists.Add(newDisableList);
                         disabledImported = disabledNames.Count;
                     }
+
+                    var userCharacterNames = newEntries.Select(e => e.Character.Name)
+                        .Concat(existingEntries)
+                        .ToHashSet();
+
+                    var charactersToDisable = await db.Characters
+                        .Where(c => userCharacterNames.Contains(c.Name) && disabledNames.Contains(c.Name))
+                        .ToListAsync();
+
+                    foreach (var c in charactersToDisable) {
+                        c.Disabled = true;
+                    }
+                    Logger.LogInformation("Marked {Count} characters as disabled", charactersToDisable.Count);
                 }
             }
 

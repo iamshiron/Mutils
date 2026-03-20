@@ -33,10 +33,10 @@ public partial class MudaeParser : IMudaeParser {
 
     private static string? ParseDisabledLine(string line) {
         var match = DisabledLineRegex().Match(line);
-        if (!match.Success)
-            return null;
+        if (match.Success)
+            return match.Groups["name"].Value.Trim();
 
-        return match.Groups["name"].Value.Trim();
+        return line.Trim();
     }
 
     private static ParsedCharacter? ParseLine(string line) {
