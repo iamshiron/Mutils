@@ -22,6 +22,7 @@ public sealed record CharacterDto(
     int? Sp,
     string? ImageUrl,
     Guid? StoredImageId,
+    string? SeriesName = null,
     CharacterKakeraStatsDto? KakeraStats = null
 );
 
@@ -55,6 +56,14 @@ public sealed record CollectionStatsDto(
     int TotalKakera,
     Dictionary<string, int> KeyDistribution,
     int DisabledCount = 0
+);
+
+public sealed record ImportSeriesRequest(string Data);
+
+public sealed record ImportSeriesResponse(
+    int Updated,
+    int NotFound,
+    IReadOnlyList<string> NotFoundNames
 );
 
 public sealed record CollectionExportItemDto(

@@ -5,6 +5,7 @@ import {
     Funnel,
     Images,
     Key,
+    ListBullets,
     MagnifyingGlass,
     Pencil,
     SignIn,
@@ -21,6 +22,7 @@ import {
 import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {memo, useEffect, useState} from "react";
 import {ImportModal} from "@/components/collection/ImportModal";
+import {SeriesImportModal} from "@/components/collection/SeriesImportModal";
 import {useAuth} from "@/hooks/useAuth";
 import {collectionApi} from "@/lib/api";
 import type {CollectionEntry, CollectionExportRequest} from "@/types";
@@ -147,6 +149,11 @@ const CharacterCard = memo(function CharacterCard({
                     </div>
                 )}
             </div>
+            {character.seriesName && (
+                <p className="text-xs text-muted-foreground/70 truncate" title={character.seriesName}>
+                    {character.seriesName}
+                </p>
+            )}
             <div className="flex items-center justify-between mt-2 text-sm">
                 <span className="text-muted-foreground">#{character.rank ?? "?"}</span>
                 <div className="flex items-center gap-2">
@@ -529,6 +536,7 @@ function DeleteConfirmModal({
 function CollectionPage() {
     const [showImport, setShowImport] = useState(false);
     const [showExport, setShowExport] = useState(false);
+    const [showSeriesImport, setShowSeriesImport] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [editingEntry, setEditingEntry] = useState<CollectionEntry | null>(
         null,
@@ -650,6 +658,13 @@ function CollectionPage() {
         },
     });
 
+    const importSeriesMutation = useMutation({
+        mutationFn: (data: string) => collectionApi.importSeries(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ["collection"]});
+        },
+    });
+
     const handleExport = async (request: CollectionExportRequest) => {
         const data = await collectionApi.export(request);
         const json = JSON.stringify(data, null, 2);
@@ -748,6 +763,14 @@ function CollectionPage() {
                                     : "Cache Images"}
                             </Button>
                         )}
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowSeriesImport(true)}
+                        className="h-9 px-4 text-sm"
+                    >
+                        <ListBullets size={18}/>
+                        Series
+                    </Button>
                     <Button
                         onClick={() => setShowImport(true)}
                         className="h-9 px-4 text-sm"
@@ -982,6 +1005,14 @@ function CollectionPage() {
                 isOpen={showExport}
                 onClose={() => setShowExport(false)}
                 onExport={handleExport}
+            />
+
+            <SeriesImportModal
+                isOpen={showSeriesImport}
+                onClose={() => setShowSeriesImport(false)}
+                onImport={async (data) => {
+                    return importSeriesMutation.mutateAsync(data);
+                }}
             />
 
             <EditModal

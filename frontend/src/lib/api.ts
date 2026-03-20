@@ -14,6 +14,7 @@ import type {
 	DisableList,
 	EnableList,
 	ImportResponse,
+	ImportSeriesResponse,
 	KakeraClaim,
 	KakeraClaimExportItem,
 	KakeraStats,
@@ -165,6 +166,14 @@ export const collectionApi = {
 			request,
 		);
 		return data;
+	},
+
+	importSeries: async (data: string) => {
+		const { data: response } = await api.post<ImportSeriesResponse>(
+			"/collection/import-series",
+			{ data },
+		);
+		return response;
 	},
 };
 

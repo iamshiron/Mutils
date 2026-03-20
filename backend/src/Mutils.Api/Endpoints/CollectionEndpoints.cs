@@ -39,6 +39,7 @@ public static class CollectionEndpoints {
 
             var query = db.CollectionEntries
                 .Include(e => e.Character)
+                    .ThenInclude(c => c.Series)
                 .Where(e => e.UserId == userId);
 
             if (!string.IsNullOrEmpty(search)) {
@@ -131,6 +132,7 @@ public static class CollectionEndpoints {
                         e.Character.Sp,
                         e.Character.OriginalImageUrl,
                         e.Character.StoredImageId,
+                        e.Character.Series?.Name,
                         statsPerCharacter.GetValueOrDefault(e.Character.Id)
                     ),
                     e.AcquiredAt,
@@ -409,6 +411,67 @@ public static class CollectionEndpoints {
 
             return Results.Ok(new ImportResponse(imported, skipped, updated, new List<string>(), imageJobsCreated,
                 disabledImported > 0 ? disabledImported : null));
+        });
+
+        group.MapPost("/import-series", async (
+            ClaimsPrincipal user,
+            ImportSeriesRequest request,
+            MutilsDbContext db) => {
+            var userId = GetUserId(user);
+            if (userId is null) return Results.Unauthorized();
+
+            var lines = request.Data
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            var assignments = new List<(string CharName, string SeriesName)>();
+            foreach (var line in lines) {
+                var separatorIndex = line.LastIndexOf(" - ", StringComparison.Ordinal);
+                if (separatorIndex <= 0) continue;
+
+                var charName = line[..separatorIndex].Trim();
+                var seriesName = line[(separatorIndex + 3)..].Trim();
+                if (!string.IsNullOrEmpty(charName) && !string.IsNullOrEmpty(seriesName))
+                    assignments.Add((charName, seriesName));
+            }
+
+            var charNames = assignments.Select(a => a.CharName).Distinct().ToList();
+            var userCharacters = await db.CollectionEntries
+                .Include(e => e.Character)
+                .Where(e => e.UserId == userId && charNames.Contains(e.Character.Name))
+                .Select(e => e.Character)
+                .ToDictionaryAsync(c => c.Name);
+
+            var seriesNames = assignments.Select(a => a.SeriesName).Distinct().ToList();
+            var existingSeries = await db.Series
+                .Where(s => seriesNames.Contains(s.Name))
+                .ToDictionaryAsync(s => s.Name);
+
+            var updated = 0;
+            var notFoundNames = new List<string>();
+
+            foreach (var (charName, seriesName) in assignments) {
+                if (!userCharacters.TryGetValue(charName, out var character)) {
+                    notFoundNames.Add(charName);
+                    continue;
+                }
+
+                if (!existingSeries.TryGetValue(seriesName, out var series)) {
+                    series = new Series { Name = seriesName };
+                    db.Series.Add(series);
+                    existingSeries[seriesName] = series;
+                }
+
+                character.Series = series;
+                updated++;
+            }
+
+            await db.SaveChangesAsync();
+
+            Logger.LogInformation(
+                "Series import completed: {Updated} updated, {NotFound} not found",
+                updated, notFoundNames.Count);
+
+            return Results.Ok(new ImportSeriesResponse(updated, notFoundNames.Count, notFoundNames));
         });
 
         group.MapPost("/process-images", async (

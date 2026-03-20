@@ -21,6 +21,7 @@ export interface Character {
     sp: number | null;
     imageUrl: string | null;
     storedImageId: string | null;
+    seriesName: string | null;
     kakeraStats?: CharacterKakeraStats;
 }
 
@@ -257,6 +258,12 @@ export interface BulkKakeraImportResponse {
     imported: number;
     skipped: number;
     errors: string[];
+}
+
+export interface ImportSeriesResponse {
+    updated: number;
+    notFound: number;
+    notFoundNames: string[];
 }
 
 export interface CollectionExportItem {
