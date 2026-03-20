@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatisticsRouteImport } from './routes/statistics'
+import { Route as RollsRouteImport } from './routes/rolls'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OptimizerRouteImport } from './routes/optimizer'
 import { Route as ListsRouteImport } from './routes/lists'
@@ -22,6 +23,11 @@ import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 const StatisticsRoute = StatisticsRouteImport.update({
   id: '/statistics',
   path: '/statistics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RollsRoute = RollsRouteImport.update({
+  id: '/rolls',
+  path: '/rolls',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/lists': typeof ListsRoute
   '/optimizer': typeof OptimizerRoute
   '/profile': typeof ProfileRoute
+  '/rolls': typeof RollsRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/lists': typeof ListsRoute
   '/optimizer': typeof OptimizerRoute
   '/profile': typeof ProfileRoute
+  '/rolls': typeof RollsRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/lists': typeof ListsRoute
   '/optimizer': typeof OptimizerRoute
   '/profile': typeof ProfileRoute
+  '/rolls': typeof RollsRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/lists'
     | '/optimizer'
     | '/profile'
+    | '/rolls'
     | '/statistics'
     | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/lists'
     | '/optimizer'
     | '/profile'
+    | '/rolls'
     | '/statistics'
     | '/auth/callback'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/lists'
     | '/optimizer'
     | '/profile'
+    | '/rolls'
     | '/statistics'
     | '/auth/callback'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   ListsRoute: typeof ListsRoute
   OptimizerRoute: typeof OptimizerRoute
   ProfileRoute: typeof ProfileRoute
+  RollsRoute: typeof RollsRoute
   StatisticsRoute: typeof StatisticsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
 }
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/statistics'
       fullPath: '/statistics'
       preLoaderRoute: typeof StatisticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rolls': {
+      id: '/rolls'
+      path: '/rolls'
+      fullPath: '/rolls'
+      preLoaderRoute: typeof RollsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListsRoute: ListsRoute,
   OptimizerRoute: OptimizerRoute,
   ProfileRoute: ProfileRoute,
+  RollsRoute: RollsRoute,
   StatisticsRoute: StatisticsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
 }

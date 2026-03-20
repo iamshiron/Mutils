@@ -1,9 +1,13 @@
-import { FloppyDisk, Medal, CastleTurret } from "@phosphor-icons/react";
+import {
+	CastleTurret,
+	DiceFive,
+	FloppyDisk,
+	Medal,
+} from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { profileApi } from "@/lib/api";
-import type { UpdateProfileRequest, UserProfile } from "@/types";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -12,6 +16,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -21,7 +26,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { toast } from "sonner";
+import { profileApi } from "@/lib/api";
+import type { UpdateProfileRequest, UserProfile } from "@/types";
 
 export const Route = createFileRoute("/profile")({
 	component: ProfilePage,
@@ -53,8 +59,7 @@ const TOWER_PERKS = [
 	{
 		key: "towerPerk4",
 		id: 4,
-		description:
-			"+10% chance to earn a second key if the character is wished",
+		description: "+10% chance to earn a second key if the character is wished",
 	},
 	{
 		key: "towerPerk5",
@@ -94,7 +99,38 @@ const TOWER_PERKS = [
 	},
 ] as const;
 
-type ProfileFieldKey = (typeof BADGES)[number]["key"] | (typeof TOWER_PERKS)[number]["key"];
+const ROLL_SETTINGS = [
+	{
+		key: "totalPool",
+		label: "Total Pool ($wg)",
+		description: "Total characters in roulette from $wg",
+	},
+	{
+		key: "disabledLimit",
+		label: "Disabled Limit",
+		description: "Base disabled limit before perk 3",
+	},
+	{
+		key: "antiDisabled",
+		label: "Antidisabled ($ad)",
+		description: "Characters added back via $ad",
+	},
+	{
+		key: "totalRolls",
+		label: "Total Rolls/Hour",
+		description: "Total rolls available per hour (base + perk 11 bonus)",
+	},
+	{
+		key: "bwRollsInvested",
+		label: "$bw Rolls Invested",
+		description: "Rolls invested in boostwish for bonus spawn",
+	},
+] as const;
+
+type ProfileFieldKey =
+	| (typeof BADGES)[number]["key"]
+	| (typeof TOWER_PERKS)[number]["key"]
+	| (typeof ROLL_SETTINGS)[number]["key"];
 
 function LevelSelect({
 	value,
@@ -106,10 +142,7 @@ function LevelSelect({
 	max: number;
 }) {
 	return (
-		<Select
-			value={String(value)}
-			onValueChange={(v) => onChange(Number(v))}
-		>
+		<Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
 			<SelectTrigger className="w-20">
 				<SelectValue />
 			</SelectTrigger>
@@ -132,7 +165,9 @@ function ProfilePage() {
 		queryFn: profileApi.get,
 	});
 
-	const [localEdits, setLocalEdits] = useState<Partial<Record<ProfileFieldKey, number>>>({});
+	const [localEdits, setLocalEdits] = useState<
+		Partial<Record<ProfileFieldKey, number>>
+	>({});
 	const hasChanges = Object.keys(localEdits).length > 0;
 
 	useEffect(() => {
@@ -142,7 +177,7 @@ function ProfilePage() {
 	const getValue = useCallback(
 		(key: ProfileFieldKey): number => {
 			if (key in localEdits) return localEdits[key]!;
-			return serverProfile?.[key as keyof UserProfile] as number ?? 0;
+			return (serverProfile?.[key as keyof UserProfile] as number) ?? 0;
 		},
 		[localEdits, serverProfile],
 	);
@@ -199,9 +234,7 @@ function ProfilePage() {
 						<Medal className="h-5 w-5" />
 						Kakera Badges
 					</CardTitle>
-					<CardDescription>
-						Set your current badge levels (0–4)
-					</CardDescription>
+					<CardDescription>Set your current badge levels (0–4)</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -210,14 +243,10 @@ function ProfilePage() {
 								key={badge.key}
 								className="flex items-center justify-between gap-3 rounded-md border p-3"
 							>
-								<Label className="font-medium">
-									{badge.label}
-								</Label>
+								<Label className="font-medium">{badge.label}</Label>
 								<LevelSelect
 									value={getValue(badge.key)}
-									onChange={(v) =>
-										updateField(badge.key, v)
-									}
+									onChange={(v) => updateField(badge.key, v)}
 									max={4}
 								/>
 							</div>
@@ -247,16 +276,50 @@ function ProfilePage() {
 									<span className="text-muted-foreground font-mono text-sm shrink-0">
 										[{perk.id}]
 									</span>
-									<span className="text-sm">
-										{perk.description}
-									</span>
+									<span className="text-sm">{perk.description}</span>
 								</div>
 								<LevelSelect
 									value={getValue(perk.key)}
-									onChange={(v) =>
-										updateField(perk.key, v)
-									}
+									onChange={(v) => updateField(perk.key, v)}
 									max={5}
+								/>
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<DiceFive className="h-5 w-5" />
+						Roll Settings
+					</CardTitle>
+					<CardDescription>
+						Manual settings for roll calculations (cannot be auto-imported)
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						{ROLL_SETTINGS.map((setting) => (
+							<div
+								key={setting.key}
+								className="flex items-center justify-between gap-4 rounded-md border p-3"
+							>
+								<div className="flex-1 min-w-0">
+									<Label className="font-medium">{setting.label}</Label>
+									<p className="text-xs text-muted-foreground mt-0.5">
+										{setting.description}
+									</p>
+								</div>
+								<Input
+									type="number"
+									min={0}
+									value={getValue(setting.key)}
+									onChange={(e) =>
+										updateField(setting.key, parseInt(e.target.value) || 0)
+									}
+									className="w-32"
 								/>
 							</div>
 						))}

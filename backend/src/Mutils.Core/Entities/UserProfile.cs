@@ -26,4 +26,11 @@ public sealed class UserProfile : BaseEntity {
     public int TowerPerk10 { get; set; }
     public int TowerPerk11 { get; set; }
     public int TowerPerk12 { get; set; }
+
+    // Roll Calculator Manual Fields
+    public int TotalPool { get; set; }
+    public int DisabledLimit { get; set; }
+    public int AntiDisabled { get; set; }
+    public int TotalRolls { get; set; }
+    public int BwRollsInvested { get; set; }
 }

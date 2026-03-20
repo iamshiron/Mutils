@@ -62,6 +62,11 @@ public static class ProfileEndpoints {
                 if (request.TowerPerk10.HasValue) profile.TowerPerk10 = request.TowerPerk10.Value;
                 if (request.TowerPerk11.HasValue) profile.TowerPerk11 = request.TowerPerk11.Value;
                 if (request.TowerPerk12.HasValue) profile.TowerPerk12 = request.TowerPerk12.Value;
+                if (request.TotalPool.HasValue) profile.TotalPool = request.TotalPool.Value;
+                if (request.DisabledLimit.HasValue) profile.DisabledLimit = request.DisabledLimit.Value;
+                if (request.AntiDisabled.HasValue) profile.AntiDisabled = request.AntiDisabled.Value;
+                if (request.TotalRolls.HasValue) profile.TotalRolls = request.TotalRolls.Value;
+                if (request.BwRollsInvested.HasValue) profile.BwRollsInvested = request.BwRollsInvested.Value;
 
                 await db.SaveChangesAsync();
                 return Results.Ok(ToDto(profile));
@@ -75,6 +80,8 @@ public static class ProfileEndpoints {
         p.TowerPerk1, p.TowerPerk2, p.TowerPerk3, p.TowerPerk4,
         p.TowerPerk5, p.TowerPerk6, p.TowerPerk7, p.TowerPerk8,
         p.TowerPerk9, p.TowerPerk10, p.TowerPerk11, p.TowerPerk12,
+        p.TotalPool, p.DisabledLimit, p.AntiDisabled,
+        p.TotalRolls, p.BwRollsInvested,
         p.CreatedAt, p.UpdatedAt
     );
 

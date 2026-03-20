@@ -21,6 +21,11 @@ public record UserProfileDto(
     int TowerPerk10,
     int TowerPerk11,
     int TowerPerk12,
+    int TotalPool,
+    int DisabledLimit,
+    int AntiDisabled,
+    int TotalRolls,
+    int BwRollsInvested,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );
@@ -44,5 +49,10 @@ public record UpdateProfileRequest(
     int? TowerPerk9 = null,
     int? TowerPerk10 = null,
     int? TowerPerk11 = null,
-    int? TowerPerk12 = null
+    int? TowerPerk12 = null,
+    int? TotalPool = null,
+    int? DisabledLimit = null,
+    int? AntiDisabled = null,
+    int? TotalRolls = null,
+    int? BwRollsInvested = null
 );

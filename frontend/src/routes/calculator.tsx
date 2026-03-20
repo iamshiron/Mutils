@@ -10,9 +10,16 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { calculatorApi } from "@/lib/api";
-import type { CalculatorConfig, CreateCalculatorConfigRequest } from "@/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,22 +29,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { calculatorApi } from "@/lib/api";
+import type { CalculatorConfig, CreateCalculatorConfigRequest } from "@/types";
 
 export const Route = createFileRoute("/calculator")({
 	component: CalculatorPage,
@@ -378,10 +378,12 @@ function CalculatorPage() {
 					<div className="flex items-center gap-3">
 						<Calculator size={28} className="text-primary" />
 						<div>
-							<CardTitle className="text-2xl font-bold">Roll Calculator</CardTitle>
+							<CardTitle className="text-2xl font-bold">
+								What If Calculator
+							</CardTitle>
 							<CardDescription>
-								Calculate your exact odds based on your disable list, badges, and
-								pool limits.
+								Experiment with different stats to see how they affect your
+								odds.
 							</CardDescription>
 						</div>
 					</div>
@@ -514,9 +516,12 @@ function CalculatorPage() {
 										</Badge>
 									</div>
 									<div className="flex justify-between items-center">
-										<span className="text-muted-foreground">Starwish Bonus:</span>
+										<span className="text-muted-foreground">
+											Starwish Bonus:
+										</span>
 										<Badge variant="outline">
-											+{results.bwRollsWishBonus + results.bwRollsStarwishBonus}%
+											+{results.bwRollsWishBonus + results.bwRollsStarwishBonus}
+											%
 										</Badge>
 									</div>
 								</div>
@@ -749,9 +754,9 @@ function RollSettings({ inputs, updateInput }: InputSectionProps) {
 							</span>
 						</p>
 						<p className="text-xs text-muted-foreground/70 mt-1">
-							Each roll invested grants +20% wish spawn (decreases at thresholds:
-							15% after 5, 10% after 15, 5% after 100, 1% after 200) and +10%
-							starwish (5% after 100, 1% after 200)
+							Each roll invested grants +20% wish spawn (decreases at
+							thresholds: 15% after 5, 10% after 15, 5% after 100, 1% after 200)
+							and +10% starwish (5% after 100, 1% after 200)
 						</p>
 					</div>
 				)}
@@ -764,7 +769,9 @@ function OwnedCharacters({ inputs, updateInput }: InputSectionProps) {
 	return (
 		<Card className="glass lantern-top">
 			<CardHeader className="border-b">
-				<CardTitle className="text-lg">Owned Characters ($persrare 1)</CardTitle>
+				<CardTitle className="text-lg">
+					Owned Characters ($persrare 1)
+				</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -928,7 +935,10 @@ function ResultCard({
 		default: "text-foreground",
 	};
 
-	const badgeVariants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+	const badgeVariants: Record<
+		string,
+		"default" | "secondary" | "outline" | "destructive"
+	> = {
 		primary: "default",
 		warning: "outline",
 		success: "outline",
@@ -944,11 +954,7 @@ function ResultCard({
 						{icon}
 						{title}
 					</h3>
-					{mult && (
-						<Badge variant={badgeVariants[variant]}>
-							{mult}x
-						</Badge>
-					)}
+					{mult && <Badge variant={badgeVariants[variant]}>{mult}x</Badge>}
 				</div>
 				{value && (
 					<p
@@ -965,7 +971,10 @@ function ResultCard({
 					</div>
 				)}
 				{odds && (
-					<Badge variant="outline" className="mt-1 font-mono text-sm px-3 py-1 h-auto">
+					<Badge
+						variant="outline"
+						className="mt-1 font-mono text-sm px-3 py-1 h-auto"
+					>
 						{odds}
 					</Badge>
 				)}
