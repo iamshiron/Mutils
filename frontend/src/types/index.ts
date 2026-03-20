@@ -1,282 +1,282 @@
 export interface User {
-	id: string;
-	discordId: string;
-	username: string;
-	avatarUrl: string | null;
-	createdAt?: string;
-	updatedAt?: string;
+    id: string;
+    discordId: string;
+    username: string;
+    avatarUrl: string | null;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface Character {
-	id: string;
-	name: string;
-	rank: number | null;
-	claims: number | null;
-	images: number | null;
-	gifs: number | null;
-	seriesCount: number | null;
-	keyType: string | null;
-	keyCount: number | null;
-	kakera: number | null;
-	sp: number | null;
-	imageUrl: string | null;
-	storedImageId: string | null;
-	kakeraStats?: CharacterKakeraStats;
+    id: string;
+    name: string;
+    rank: number | null;
+    claims: number | null;
+    images: number | null;
+    gifs: number | null;
+    seriesCount: number | null;
+    keyType: string | null;
+    keyCount: number | null;
+    kakera: number | null;
+    sp: number | null;
+    imageUrl: string | null;
+    storedImageId: string | null;
+    kakeraStats?: CharacterKakeraStats;
 }
 
 export interface CharacterKakeraStats {
-	totalValue: number;
-	totalCount: number;
-	byType: Record<string, number>;
+    totalValue: number;
+    totalCount: number;
+    byType: Record<string, number>;
 }
 
 export interface CollectionEntry {
-	id: string;
-	character: Character;
-	acquiredAt: string | null;
-	notes: string | null;
-	createdAt: string;
-	updatedAt: string;
-	isDisabled?: boolean;
+    id: string;
+    character: Character;
+    acquiredAt: string | null;
+    notes: string | null;
+    createdAt: string;
+    updatedAt: string;
+    isDisabled?: boolean;
 }
 
 export interface PaginatedResponse<T> {
-	items: T[];
-	total: number;
-	page: number;
-	pageSize: number;
-	totalPages: number;
+    items: T[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
 }
 
 export type ListType = "enable" | "disable";
 
 export interface EnableList {
-	id: string;
-	name: string;
-	content: string;
-	isActive: boolean;
-	createdAt: string;
-	updatedAt: string;
+    id: string;
+    name: string;
+    content: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface DisableList {
-	id: string;
-	name: string;
-	content: string;
-	isActive: boolean;
-	createdAt: string;
-	updatedAt: string;
+    id: string;
+    name: string;
+    content: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface ListPreset {
-	id: string;
-	name: string;
-	type: ListType;
-	content: string;
-	createdAt: string;
-	updatedAt: string;
+    id: string;
+    name: string;
+    type: ListType;
+    content: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface AuthResponse {
-	accessToken: string;
-	refreshToken: string;
-	expiresIn: number;
-	user: User;
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+    user: User;
 }
 
 export interface ImportResponse {
-	imported: number;
-	skipped: number;
-	updated: number;
-	errors: string[];
-	imagesQueued: number;
-	disabledImported?: number;
+    imported: number;
+    skipped: number;
+    updated: number;
+    errors: string[];
+    imagesQueued: number;
+    disabledImported?: number;
 }
 
 export interface CollectionStats {
-	totalCharacters: number;
-	totalKakera: number;
-	keyDistribution: Record<string, number>;
-	disabledCount?: number;
+    totalCharacters: number;
+    totalKakera: number;
+    keyDistribution: Record<string, number>;
+    disabledCount?: number;
 }
 
 export interface OptimizerAnalysis {
-	totalCharacters: number;
-	totalKakera: number;
-	keyDistribution: Record<string, number>;
-	recommendations: OptimizerRecommendation[];
+    totalCharacters: number;
+    totalKakera: number;
+    keyDistribution: Record<string, number>;
+    recommendations: OptimizerRecommendation[];
 }
 
 export interface OptimizerRecommendation {
-	type: string;
-	series: string;
-	reason: string;
-	impact: "high" | "medium" | "low";
+    type: string;
+    series: string;
+    reason: string;
+    impact: "high" | "medium" | "low";
 }
 
 export interface OptimizerSuggestion {
-	id: string;
-	type: string;
-	characters: string[];
-	reason: string;
-	priority: number;
+    id: string;
+    type: string;
+    characters: string[];
+    reason: string;
+    priority: number;
 }
 
 export interface OptimizerSuggestionsResponse {
-	suggestions: OptimizerSuggestion[];
+    suggestions: OptimizerSuggestion[];
 }
 
 export interface ApiError {
-	error: {
-		code: string;
-		message: string;
-		details?: Record<string, unknown>;
-	};
+    error: {
+        code: string;
+        message: string;
+        details?: Record<string, unknown>;
+    };
 }
 
 export type KakeraType =
-	| "purple"
-	| "blue"
-	| "green"
-	| "yellow"
-	| "orange"
-	| "red"
-	| "rainbow"
-	| "light"
-	| "chaos"
-	| "dark"
-	| "teal"
-	| "bku";
+    | "purple"
+    | "blue"
+    | "green"
+    | "yellow"
+    | "orange"
+    | "red"
+    | "rainbow"
+    | "light"
+    | "chaos"
+    | "dark"
+    | "teal"
+    | "bku";
 
 export interface KakeraClaim {
-	id: string;
-	userId: string;
-	characterId: string | null;
-	characterName: string | null;
-	type: KakeraType;
-	value: number;
-	isClaimed: boolean;
-	claimedAt: string;
+    id: string;
+    userId: string;
+    characterId: string | null;
+    characterName: string | null;
+    type: KakeraType;
+    value: number;
+    isClaimed: boolean;
+    claimedAt: string;
 }
 
 export interface KakeraStats {
-	totalValue: number;
-	totalCount: number;
-	byType: Record<
-		string,
-		{
-			count: number;
-			totalValue: number;
-		}
-	>;
+    totalValue: number;
+    totalCount: number;
+    byType: Record<
+        string,
+        {
+            count: number;
+            totalValue: number;
+        }
+    >;
 }
 
 export interface CreateKakeraClaimRequest {
-	characterId?: string;
-	characterName?: string;
-	type: KakeraType;
-	value: number;
-	isClaimed: boolean;
-	claimedAt?: string;
+    characterId?: string;
+    characterName?: string;
+    type: KakeraType;
+    value: number;
+    isClaimed: boolean;
+    claimedAt?: string;
 }
 
 export interface UpdateKakeraClaimRequest {
-	characterName?: string;
-	type: KakeraType;
-	value: number;
-	isClaimed: boolean;
-	claimedAt?: string;
+    characterName?: string;
+    type: KakeraType;
+    value: number;
+    isClaimed: boolean;
+    claimedAt?: string;
 }
 
 export interface KakeraClaimExportItem {
-	id: string;
-	characterName: string | null;
-	type: KakeraType;
-	value: number;
-	isClaimed: boolean;
-	claimedAt: string;
+    id: string;
+    characterName: string | null;
+    type: KakeraType;
+    value: number;
+    isClaimed: boolean;
+    claimedAt: string;
 }
 
 export interface CalculatorConfig {
-	id: string;
-	name: string;
-	totalPool: number;
-	disabledLimit: number;
-	antiDisabled: number;
-	silverBadge: number;
-	rubyBadge: number;
-	perk2: number;
-	perk3: number;
-	perk4: number;
-	ownedTotal: number;
-	ownedDisabled: number;
-	totalRolls?: number;
-	bwRollsInvested?: number;
-	createdAt: string;
-	updatedAt: string;
+    id: string;
+    name: string;
+    totalPool: number;
+    disabledLimit: number;
+    antiDisabled: number;
+    silverBadge: number;
+    rubyBadge: number;
+    perk2: number;
+    perk3: number;
+    perk4: number;
+    ownedTotal: number;
+    ownedDisabled: number;
+    totalRolls?: number;
+    bwRollsInvested?: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface CreateCalculatorConfigRequest {
-	name: string;
-	totalPool: number;
-	disabledLimit: number;
-	antiDisabled: number;
-	silverBadge: number;
-	rubyBadge: number;
-	perk2: number;
-	perk3: number;
-	perk4: number;
-	ownedTotal: number;
-	ownedDisabled: number;
-	totalRolls: number;
-	bwRollsInvested: number;
+    name: string;
+    totalPool: number;
+    disabledLimit: number;
+    antiDisabled: number;
+    silverBadge: number;
+    rubyBadge: number;
+    perk2: number;
+    perk3: number;
+    perk4: number;
+    ownedTotal: number;
+    ownedDisabled: number;
+    totalRolls: number;
+    bwRollsInvested: number;
 }
 
 export interface UpdateCalculatorConfigRequest {
-	name?: string;
-	totalPool?: number;
-	disabledLimit?: number;
-	antiDisabled?: number;
-	silverBadge?: number;
-	rubyBadge?: number;
-	perk2?: number;
-	perk3?: number;
-	perk4?: number;
-	ownedTotal?: number;
-	ownedDisabled?: number;
-	totalRolls?: number;
-	bwRollsInvested?: number;
+    name?: string;
+    totalPool?: number;
+    disabledLimit?: number;
+    antiDisabled?: number;
+    silverBadge?: number;
+    rubyBadge?: number;
+    perk2?: number;
+    perk3?: number;
+    perk4?: number;
+    ownedTotal?: number;
+    ownedDisabled?: number;
+    totalRolls?: number;
+    bwRollsInvested?: number;
 }
 
 export interface BulkKakeraImportRequest {
-	data: string;
-	characterName?: string;
+    data: string;
+    characterName?: string;
 }
 
 export interface BulkKakeraImportResponse {
-	imported: number;
-	skipped: number;
-	errors: string[];
+    imported: number;
+    skipped: number;
+    errors: string[];
 }
 
 export interface CollectionExportItem {
-	name: string;
-	kakera: number | null;
-	keyCount: number | null;
-	sp: number | null;
-	isDisabled: boolean;
+    name: string;
+    kakera: number | null;
+    keyCount: number | null;
+    sp: number | null;
+    isDisabled: boolean;
 }
 
 export interface CollectionExportResponse {
-	totalCount: number;
-	exportedCount: number;
-	items: CollectionExportItem[];
+    totalCount: number;
+    exportedCount: number;
+    items: CollectionExportItem[];
 }
 
 export interface CollectionExportRequest {
-	minKeys?: number;
-	sortBy?: "kakera" | "keyCount" | "sp" | "name";
-	sortOrder?: "asc" | "desc";
-	limit?: number;
-	excludeDisabled?: boolean;
+    minKeys?: number;
+    sortBy?: "kakera" | "keyCount" | "sp" | "name";
+    sortOrder?: "asc" | "desc";
+    limit?: number;
+    excludeDisabled?: boolean;
 }
