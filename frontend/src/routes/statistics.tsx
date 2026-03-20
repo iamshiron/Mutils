@@ -51,12 +51,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -73,9 +68,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-	NativeSelect,
-	NativeSelectOption,
-} from "@/components/ui/native-select";
+	Pagination,
+	PaginationContent,
+	PaginationItem,
+	PaginationLink,
+	PaginationNext,
+	PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
 	Table,
@@ -641,7 +647,11 @@ function StatisticsPage() {
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2">
-					<Button variant="secondary" className="h-9 px-4 text-sm" onClick={handleExport}>
+					<Button
+						variant="secondary"
+						className="h-9 px-4 text-sm"
+						onClick={handleExport}
+					>
 						<Download size={18} />
 						Export
 					</Button>
@@ -703,7 +713,9 @@ function StatisticsPage() {
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-3 mb-2">
 							<TrendUp size={20} className="text-primary" />
-							<span className="text-muted-foreground text-sm">Total Kakera</span>
+							<span className="text-muted-foreground text-sm">
+								Total Kakera
+							</span>
 						</div>
 						<p className="text-3xl font-bold text-primary">
 							{stats.totalValue.toLocaleString()}
@@ -714,7 +726,9 @@ function StatisticsPage() {
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-3 mb-2">
 							<ChartBar size={20} className="text-info" />
-							<span className="text-muted-foreground text-sm">Total Claims</span>
+							<span className="text-muted-foreground text-sm">
+								Total Claims
+							</span>
 						</div>
 						<p className="text-3xl font-bold text-info">
 							{stats.totalCount.toLocaleString()}
@@ -760,7 +774,9 @@ function StatisticsPage() {
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-3 mb-2">
 							<TrendUp size={20} className="text-success" />
-							<span className="text-muted-foreground text-sm">Daily Average</span>
+							<span className="text-muted-foreground text-sm">
+								Daily Average
+							</span>
 						</div>
 						<p className="text-3xl font-bold text-success">
 							{Math.round(dailyAvg).toLocaleString()}
@@ -771,7 +787,9 @@ function StatisticsPage() {
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-3 mb-2">
 							<ChartBar size={20} className="text-warning" />
-							<span className="text-muted-foreground text-sm">Monthly Est.</span>
+							<span className="text-muted-foreground text-sm">
+								Monthly Est.
+							</span>
 						</div>
 						<p className="text-3xl font-bold text-warning">
 							{Math.round(dailyAvg * 30).toLocaleString()}
@@ -782,7 +800,9 @@ function StatisticsPage() {
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-3 mb-2">
 							<Clock size={20} className="text-destructive" />
-							<span className="text-muted-foreground text-sm">Success Rate</span>
+							<span className="text-muted-foreground text-sm">
+								Success Rate
+							</span>
 						</div>
 						<p className="text-3xl font-bold text-destructive">
 							{claims.length > 0
@@ -808,8 +828,16 @@ function StatisticsPage() {
 								<AreaChart data={dailyData}>
 									<defs>
 										<linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="5%" stopColor={CHART_COLORS.sakura} stopOpacity={0.3} />
-											<stop offset="95%" stopColor={CHART_COLORS.sakura} stopOpacity={0} />
+											<stop
+												offset="5%"
+												stopColor={CHART_COLORS.sakura}
+												stopOpacity={0.3}
+											/>
+											<stop
+												offset="95%"
+												stopColor={CHART_COLORS.sakura}
+												stopOpacity={0}
+											/>
 										</linearGradient>
 									</defs>
 									<CartesianGrid
@@ -884,7 +912,10 @@ function StatisticsPage() {
 										dataKey={pieChartMode === "value" ? "value" : "count"}
 									>
 										{pieData.map((entry) => (
-											<Cell key={entry.type} fill={getKakeraColor(entry.type)} />
+											<Cell
+												key={entry.type}
+												fill={getKakeraColor(entry.type)}
+											/>
 										))}
 									</Pie>
 									<Tooltip
@@ -901,7 +932,10 @@ function StatisticsPage() {
 						</div>
 						<div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
 							{pieData.map((entry) => (
-								<div key={entry.name} className="flex items-center gap-2 text-xs">
+								<div
+									key={entry.name}
+									className="flex items-center gap-2 text-xs"
+								>
 									<div
 										className="w-3 h-3 rounded-full"
 										style={{
@@ -1045,7 +1079,10 @@ function StatisticsPage() {
 
 			{/* Advanced Statistics Collapsible */}
 			<Card className="glass overflow-hidden">
-				<Collapsible open={showAdvancedStats} onOpenChange={setShowAdvancedStats}>
+				<Collapsible
+					open={showAdvancedStats}
+					onOpenChange={setShowAdvancedStats}
+				>
 					<CollapsibleTrigger asChild>
 						<button
 							type="button"
@@ -1373,7 +1410,9 @@ function StatisticsPage() {
 													</span>
 												</div>
 												<div>
-													<span className="text-muted-foreground">Slope = </span>
+													<span className="text-muted-foreground">
+														Slope ={" "}
+													</span>
 													<span
 														className={`font-semibold ${linearResult.slope >= 0 ? "text-success" : "text-destructive"}`}
 													>
@@ -1440,8 +1479,8 @@ function StatisticsPage() {
 													Calculates daily income totals from your claim history
 												</li>
 												<li>
-													Fits a linear regression to find if your daily income is
-													trending up/down
+													Fits a linear regression to find if your daily income
+													is trending up/down
 												</li>
 												<li>
 													Predicts future daily incomes using the fitted line
@@ -1522,9 +1561,7 @@ function StatisticsPage() {
 																if (value === undefined) return "";
 																const isFuture = props.payload?.isFuture;
 																return (
-																	<span
-																		className={isFuture ? "text-info" : ""}
-																	>
+																	<span className={isFuture ? "text-info" : ""}>
 																		{value.toLocaleString()}
 																		{isFuture ? " (projected)" : ""}
 																	</span>
@@ -1592,18 +1629,23 @@ function StatisticsPage() {
 						<span className="text-sm text-muted-foreground">
 							{sortedClaims.length} total
 						</span>
-						<NativeSelect
-							value={itemsPerPage}
-							onChange={(e) => {
-								setItemsPerPage(Number(e.target.value));
+						<Select
+							value={String(itemsPerPage)}
+							onValueChange={(value) => {
+								setItemsPerPage(Number(value));
 								setCurrentPage(1);
 							}}
 						>
-							<NativeSelectOption value={10}>10 per page</NativeSelectOption>
-							<NativeSelectOption value={20}>20 per page</NativeSelectOption>
-							<NativeSelectOption value={50}>50 per page</NativeSelectOption>
-							<NativeSelectOption value={100}>100 per page</NativeSelectOption>
-						</NativeSelect>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="10">10 per page</SelectItem>
+								<SelectItem value="20">20 per page</SelectItem>
+								<SelectItem value="50">50 per page</SelectItem>
+								<SelectItem value="100">100 per page</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
 				</CardHeader>
 				<CardContent className="p-0">
@@ -1640,9 +1682,7 @@ function StatisticsPage() {
 										<SortIndicator field="value" />
 									</button>
 								</TableHead>
-								<TableHead className="text-center">
-									Status
-								</TableHead>
+								<TableHead className="text-center">Status</TableHead>
 								<TableHead>
 									<button
 										type="button"
@@ -1752,49 +1792,59 @@ function StatisticsPage() {
 					</Table>
 				</CardContent>
 				{totalPages > 1 && (
-					<div className="p-4 border-t border-border flex items-center justify-between">
+					<div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
 						<div className="text-sm text-muted-foreground">
 							Showing {startIndex + 1} to{" "}
 							{Math.min(startIndex + itemsPerPage, sortedClaims.length)} of{" "}
 							{sortedClaims.length} claims
 						</div>
-						<div className="flex items-center gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setCurrentPage(1)}
-								disabled={currentPage === 1}
-							>
-								First
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setCurrentPage(currentPage - 1)}
-								disabled={currentPage === 1}
-							>
-								Previous
-							</Button>
-							<span className="px-3 py-1.5 text-sm">
-								Page {currentPage} of {totalPages}
-							</span>
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setCurrentPage(currentPage + 1)}
-								disabled={currentPage === totalPages}
-							>
-								Next
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setCurrentPage(totalPages)}
-								disabled={currentPage === totalPages}
-							>
-								Last
-							</Button>
-						</div>
+						<Pagination>
+							<PaginationContent>
+								<PaginationItem>
+									<PaginationPrevious
+										onClick={() => setCurrentPage(currentPage - 1)}
+										className={
+											currentPage === 1
+												? "pointer-events-none opacity-50"
+												: "cursor-pointer"
+										}
+									/>
+								</PaginationItem>
+								{Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+									let pageNum: number;
+									if (totalPages <= 5) {
+										pageNum = i + 1;
+									} else if (currentPage <= 3) {
+										pageNum = i + 1;
+									} else if (currentPage >= totalPages - 2) {
+										pageNum = totalPages - 4 + i;
+									} else {
+										pageNum = currentPage - 2 + i;
+									}
+									return (
+										<PaginationItem key={pageNum}>
+											<PaginationLink
+												onClick={() => setCurrentPage(pageNum)}
+												isActive={currentPage === pageNum}
+												className="cursor-pointer"
+											>
+												{pageNum}
+											</PaginationLink>
+										</PaginationItem>
+									);
+								})}
+								<PaginationItem>
+									<PaginationNext
+										onClick={() => setCurrentPage(currentPage + 1)}
+										className={
+											currentPage === totalPages
+												? "pointer-events-none opacity-50"
+												: "cursor-pointer"
+										}
+									/>
+								</PaginationItem>
+							</PaginationContent>
+						</Pagination>
 					</div>
 				)}
 			</Card>
@@ -1911,8 +1961,7 @@ function StatisticsPage() {
 								className="h-9"
 							/>
 							<p className="text-xs text-muted-foreground mt-1">
-								If provided, all claims will be associated with this
-								character.
+								If provided, all claims will be associated with this character.
 							</p>
 						</div>
 						<div>
@@ -1946,9 +1995,7 @@ APP
 						</Button>
 						<Button
 							onClick={() => bulkImportMutation.mutate()}
-							disabled={
-								bulkImportMutation.isPending || !bulkImportData.trim()
-							}
+							disabled={bulkImportMutation.isPending || !bulkImportData.trim()}
 						>
 							{bulkImportMutation.isPending ? "Importing..." : "Import"}
 						</Button>
