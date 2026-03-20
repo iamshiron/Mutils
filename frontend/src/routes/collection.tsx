@@ -44,12 +44,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
-import {NativeSelect, NativeSelectOption} from "@/components/ui/native-select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {Textarea} from "@/components/ui/textarea";
 import {Label} from "@/components/ui/label";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Badge} from "@/components/ui/badge";
 import {Spinner} from "@/components/ui/spinner";
+import {Toggle} from "@/components/ui/toggle";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/collection")({
@@ -284,38 +291,42 @@ function ExportModal({
                         <Label htmlFor="sortBy" className="mb-1">
                             Sort By
                         </Label>
-                        <NativeSelect
-                            id="sortBy"
+                        <Select
                             value={sortBy}
-                            onChange={(e) =>
-                                setSortBy(e.target.value as CollectionExportRequest["sortBy"])
+                            onValueChange={(value) =>
+                                setSortBy(value as CollectionExportRequest["sortBy"])
                             }
-                            className="w-full"
                         >
-                            <NativeSelectOption value="kakera">Kakera Value</NativeSelectOption>
-                            <NativeSelectOption value="keyCount">Key Count</NativeSelectOption>
-                            <NativeSelectOption value="sp">Spheres</NativeSelectOption>
-                            <NativeSelectOption value="name">Name</NativeSelectOption>
-                        </NativeSelect>
+                            <SelectTrigger className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="kakera">Kakera Value</SelectItem>
+                                <SelectItem value="keyCount">Key Count</SelectItem>
+                                <SelectItem value="sp">Spheres</SelectItem>
+                                <SelectItem value="name">Name</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div>
                         <Label htmlFor="sortOrder" className="mb-1">
                             Sort Order
                         </Label>
-                        <NativeSelect
-                            id="sortOrder"
+                        <Select
                             value={sortOrder}
-                            onChange={(e) =>
-                                setSortOrder(
-                                    e.target.value as CollectionExportRequest["sortOrder"],
-                                )
+                            onValueChange={(value) =>
+                                setSortOrder(value as CollectionExportRequest["sortOrder"])
                             }
-                            className="w-full"
                         >
-                            <NativeSelectOption value="desc">Descending</NativeSelectOption>
-                            <NativeSelectOption value="asc">Ascending</NativeSelectOption>
-                        </NativeSelect>
+                            <SelectTrigger className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="desc">Descending</SelectItem>
+                                <SelectItem value="asc">Ascending</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div>
@@ -795,34 +806,38 @@ function CollectionPage() {
                         className="h-9 pl-10 pr-4"
                     />
                 </div>
-                <Button
-                    variant={showFilters ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => setShowFilters(!showFilters)}
-                    title="Filters"
-                    className={showFilters ? "bg-primary/20 border-primary text-primary hover:bg-primary/30" : ""}
-                >
-                    <Funnel size={20}/>
-                </Button>
-                <NativeSelect
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                >
-                    <NativeSelectOption value="rank">Rank</NativeSelectOption>
-                    <NativeSelectOption value="name">Name</NativeSelectOption>
-                    <NativeSelectOption value="kakera">Kakera</NativeSelectOption>
-                    <NativeSelectOption value="user_kakera">Best Performing</NativeSelectOption>
-                    <NativeSelectOption value="claims">Claims</NativeSelectOption>
-                    <NativeSelectOption value="keys">Keys</NativeSelectOption>
-                </NativeSelect>
-                <Button
+                <Toggle
                     variant="outline"
-                    size="icon"
-                    onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                    className={sortOrder === "desc" ? "rotate-180" : ""}
+                    pressed={showFilters}
+                    onPressedChange={setShowFilters}
+                    aria-label="Toggle filters"
                 >
-                    <SortAscending size={20}/>
-                </Button>
+                    <Funnel size={16}/>
+                </Toggle>
+                <Select
+                    value={sortBy}
+                    onValueChange={setSortBy}
+                >
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="rank">Rank</SelectItem>
+                        <SelectItem value="name">Name</SelectItem>
+                        <SelectItem value="kakera">Kakera</SelectItem>
+                        <SelectItem value="user_kakera">Best Performing</SelectItem>
+                        <SelectItem value="claims">Claims</SelectItem>
+                        <SelectItem value="keys">Keys</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Toggle
+                    variant="outline"
+                    pressed={sortOrder === "desc"}
+                    onPressedChange={(pressed) => setSortOrder(pressed ? "desc" : "asc")}
+                    aria-label="Toggle sort direction"
+                >
+                    <SortAscending size={16} className={sortOrder === "desc" ? "rotate-180" : ""}/>
+                </Toggle>
             </div>
 
             {showFilters && (
@@ -868,19 +883,21 @@ function CollectionPage() {
                             <Label htmlFor="filter-disabled">
                                 Status:
                             </Label>
-                            <NativeSelect
-                                id="filter-disabled"
+                            <Select
                                 value={disabledFilter}
-                                onChange={(e) =>
-                                    setDisabledFilter(
-                                        e.target.value as "all" | "disabled" | "enabled",
-                                    )
+                                onValueChange={(value) =>
+                                    setDisabledFilter(value as "all" | "disabled" | "enabled")
                                 }
                             >
-                                <NativeSelectOption value="all">All</NativeSelectOption>
-                                <NativeSelectOption value="disabled">Disabled Only</NativeSelectOption>
-                                <NativeSelectOption value="enabled">Enabled Only</NativeSelectOption>
-                            </NativeSelect>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="disabled">Disabled Only</SelectItem>
+                                    <SelectItem value="enabled">Enabled Only</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         {(minKeys !== "" ||
                             minKakera !== "" ||

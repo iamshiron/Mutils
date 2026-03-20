@@ -33,6 +33,9 @@
     --color-kakera-dark: var(--kakera-dark);
     --color-kakera-teal: var(--kakera-teal);
     --color-kakera-bku: var(--kakera-bku);
+    --color-info: var(--info);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -84,6 +87,9 @@
     --chart-3: oklch(0.435 0.029 321.78);
     --chart-4: oklch(0.364 0.029 323.89);
     --chart-5: oklch(0.263 0.024 320.12);
+    --info: oklch(0.546 0.245 262.881);
+    --success: oklch(0.627 0.194 149.214);
+    --warning: oklch(0.795 0.184 86.047);
     --radius: 0.875rem;
 
     /* Kakera type colors */
@@ -141,6 +147,10 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.542 0.034 322.5);
+
+    --info: oklch(0.623 0.234 262.881);
+    --success: oklch(0.696 0.178 149.214);
+    --warning: oklch(0.838 0.167 86.047);
 
     /* Kakera type colors (dark) */
     --kakera-purple: oklch(0.627 0.265 293.009);

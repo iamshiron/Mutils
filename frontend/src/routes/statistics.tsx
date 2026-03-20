@@ -105,9 +105,9 @@ export const Route = createFileRoute("/statistics")({
 // Chart colors derived from design tokens
 const CHART_COLORS = {
 	sakura: "var(--primary)",
-	info: "var(--color-info)",
+	info: "var(--info)",
 	purple: "var(--chart-3)",
-	cyan: "var(--color-info)",
+	cyan: "var(--info)",
 } as const;
 
 const CHART_TOOLTIP_STYLE = {
