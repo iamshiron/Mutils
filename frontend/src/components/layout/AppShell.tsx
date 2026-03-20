@@ -1,5 +1,7 @@
 import {useAuth} from "@/hooks/useAuth";
 import {Link} from "@tanstack/react-router";
+import {Button} from "@/components/ui/button";
+import {ModeToggle} from "@/components/layout/ModeToggle";
 
 export function AppShell({children}: { children: React.ReactNode }) {
     const {user, logout} = useAuth();
@@ -9,58 +11,42 @@ export function AppShell({children}: { children: React.ReactNode }) {
             <header className="sticky top-0 z-50 border-b border-border glass">
                 <div className="container mx-auto flex h-16 items-center justify-between px-4">
                     <Link to="/" className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-sakura-500">Mutils</span>
+                        <span className="text-xl font-bold text-primary">Mutils</span>
                     </Link>
-                    <nav className="flex items-center gap-6">
-                        <Link
-                            to="/collection"
-                            className="text-foreground-muted hover:text-foreground transition-colors"
-                        >
-                            Collection
-                        </Link>
-                        <Link
-                            to="/lists"
-                            className="text-foreground-muted hover:text-foreground transition-colors"
-                        >
-                            Lists
-                        </Link>
-                        <Link
-                            to="/calculator"
-                            className="text-foreground-muted hover:text-foreground transition-colors"
-                        >
-                            Calculator
-                        </Link>
-                        <Link
-                            to="/optimizer"
-                            className="text-foreground-muted hover:text-foreground transition-colors"
-                        >
-                            Optimizer
-                        </Link>
-                        <Link
-                            to="/statistics"
-                            className="text-foreground-muted hover:text-foreground transition-colors"
-                        >
-                            Statistics
-                        </Link>
-                        <Link
-                            to="/profile"
-                            className="text-foreground-muted hover:text-foreground transition-colors">
-                            Profile
-                        </Link>
+                    <nav className="flex items-center gap-1">
+                        <Button asChild variant="ghost">
+                            <Link to="/collection">Collection</Link>
+                        </Button>
+                        <Button asChild variant="ghost">
+                            <Link to="/lists">Lists</Link>
+                        </Button>
+                        <Button asChild variant="ghost">
+                            <Link to="/calculator">Calculator</Link>
+                        </Button>
+                        <Button asChild variant="ghost">
+                            <Link to="/optimizer">Optimizer</Link>
+                        </Button>
+                        <Button asChild variant="ghost">
+                            <Link to="/statistics">Statistics</Link>
+                        </Button>
+                        <Button asChild variant="ghost">
+                            <Link to="/profile">Profile</Link>
+                        </Button>
                     </nav>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <ModeToggle/>
                         {user && (
                             <div className="flex items-center gap-2">
-								<span className="text-sm text-foreground-muted">
+								<span className="text-sm text-muted-foreground">
 									{user.username}
 								</span>
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="ghost"
                                     onClick={logout}
-                                    className="text-sm text-torii-500 hover:text-torii-300 transition-colors"
+                                    className="text-destructive hover:text-destructive"
                                 >
                                     Logout
-                                </button>
+                                </Button>
                             </div>
                         )}
                     </div>

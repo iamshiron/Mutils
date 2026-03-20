@@ -1,16 +1,16 @@
 import type { KakeraType } from "@/types";
 
 export const KAKERA_COLORS: Record<KakeraType, string> = {
-	purple: "#a855f7",
-	blue: "#3b82f6",
-	green: "#22c55e",
-	yellow: "#eab308",
-	orange: "#f97316",
-	red: "#ef4444",
-	rainbow: "#ec4899",
-	light: "#f8fafc",
-	chaos: "#6366f1",
-	dark: "#1e293b",
-	teal: "#14b8a6",
-	bku: "#8b5cf6",
+	purple: "var(--kakera-purple)",
+	blue: "var(--kakera-blue)",
+	green: "var(--kakera-green)",
+	yellow: "var(--kakera-yellow)",
+	orange: "var(--kakera-orange)",
+	red: "var(--kakera-red)",
+	rainbow: "var(--kakera-rainbow)",
+	light: "var(--kakera-light)",
+	chaos: "var(--kakera-chaos)",
+	dark: "var(--kakera-dark)",
+	teal: "var(--kakera-teal)",
+	bku: "var(--kakera-bku)",
 };

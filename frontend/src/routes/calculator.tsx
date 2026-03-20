@@ -12,6 +12,32 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { calculatorApi } from "@/lib/api";
 import type { CalculatorConfig, CreateCalculatorConfigRequest } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const Route = createFileRoute("/calculator")({
 	component: CalculatorPage,
@@ -347,16 +373,20 @@ function CalculatorPage() {
 
 	return (
 		<div className="max-w-6xl mx-auto">
-			<div className="flex items-center gap-3 mb-6">
-				<Calculator size={28} className="text-sakura-500" />
-				<div>
-					<h1 className="text-2xl font-bold">Roll Calculator</h1>
-					<p className="text-foreground-muted text-sm">
-						Calculate your exact odds based on your disable list, badges, and
-						pool limits.
-					</p>
-				</div>
-			</div>
+			<Card className="glass mb-6">
+				<CardHeader>
+					<div className="flex items-center gap-3">
+						<Calculator size={28} className="text-primary" />
+						<div>
+							<CardTitle className="text-2xl font-bold">Roll Calculator</CardTitle>
+							<CardDescription>
+								Calculate your exact odds based on your disable list, badges, and
+								pool limits.
+							</CardDescription>
+						</div>
+					</div>
+				</CardHeader>
+			</Card>
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				<div className="lg:col-span-2 space-y-6">
@@ -366,96 +396,100 @@ function CalculatorPage() {
 					<RollSettings inputs={inputs} updateInput={updateInput} />
 					<OwnedCharacters inputs={inputs} updateInput={updateInput} />
 
-					<div className="glass rounded-lg p-6 lantern-top">
-						<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
-							Saved Configurations
-						</h2>
-
-						<div className="flex gap-2 mb-4">
-							<input
-								type="text"
-								value={configName}
-								onChange={(e) => setConfigName(e.target.value)}
-								placeholder="Name for current setup..."
-								className="flex-1 bg-background-secondary border border-border rounded-lg px-3 py-2 text-foreground focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition-all"
-							/>
-							<button
-								type="button"
-								onClick={handleSaveConfig}
-								disabled={createMutation.isPending}
-								className="bg-sakura-500 hover:bg-sakura-300 text-background font-medium py-2 px-6 rounded-lg transition-colors disabled:opacity-50"
-							>
-								Save
-							</button>
-						</div>
-
-						{importError && (
-							<div className="mb-4 p-3 bg-error/20 border border-error/50 rounded-lg text-error text-sm">
-								{importError}
-							</div>
-						)}
-
-						<div className="space-y-2 mb-6 max-h-48 overflow-y-auto pr-2">
-							{isLoading ? (
-								<p className="text-foreground-muted text-sm italic py-2 text-center">
-									Loading...
-								</p>
-							) : configs.length === 0 ? (
-								<p className="text-foreground-muted text-sm italic py-2 text-center border border-dashed border-border rounded">
-									No saved configurations yet.
-								</p>
-							) : (
-								configs.map((config) => (
-									<div
-										key={config.id}
-										className="bg-background-secondary border border-border rounded p-3 flex justify-between items-center group"
-									>
-										<span className="text-foreground font-medium truncate flex-1 pr-2">
-											{config.name}
-										</span>
-										<div className="flex gap-2">
-											<button
-												type="button"
-												onClick={() => handleLoadConfig(config)}
-												className="text-xs bg-night-700 hover:bg-sakura-500 text-foreground py-1 px-3 rounded transition-colors"
-											>
-												Load
-											</button>
-											<button
-												type="button"
-												onClick={() => handleDeleteConfig(config.id)}
-												className="text-xs bg-error/30 hover:bg-error text-error hover:text-white py-1 px-3 rounded transition-colors"
-											>
-												<Trash size={14} />
-											</button>
-										</div>
-									</div>
-								))
-							)}
-						</div>
-
-						<div className="flex gap-3 border-t border-border pt-4">
-							<button
-								type="button"
-								onClick={handleExport}
-								disabled={configs.length === 0}
-								className="flex-1 flex items-center justify-center gap-2 bg-night-700 hover:bg-night-600 text-foreground font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
-							>
-								<Download size={16} />
-								Export JSON
-							</button>
-							<label className="flex-1 flex items-center justify-center gap-2 bg-night-700 hover:bg-night-600 text-foreground font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer">
-								<Upload size={16} />
-								Import JSON
-								<input
-									type="file"
-									accept=".json"
-									onChange={handleImport}
-									className="hidden"
+					<Card className="glass lantern-top">
+						<CardHeader className="border-b">
+							<CardTitle className="text-lg">Saved Configurations</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="flex gap-2 mb-4">
+								<Input
+									type="text"
+									value={configName}
+									onChange={(e) => setConfigName(e.target.value)}
+									placeholder="Name for current setup..."
+									className="flex-1 h-9"
 								/>
-							</label>
-						</div>
-					</div>
+								<Button
+									onClick={handleSaveConfig}
+									disabled={createMutation.isPending}
+									className="h-9 px-4 text-sm"
+								>
+									Save
+								</Button>
+							</div>
+
+							{importError && (
+								<Alert variant="destructive" className="mb-4">
+									<AlertDescription>{importError}</AlertDescription>
+								</Alert>
+							)}
+
+							<div className="space-y-2 mb-6 max-h-48 overflow-y-auto pr-2">
+								{isLoading ? (
+									<p className="text-muted-foreground text-sm italic py-2 text-center">
+										Loading...
+									</p>
+								) : configs.length === 0 ? (
+									<p className="text-muted-foreground text-sm italic py-2 text-center border border-dashed border-border rounded">
+										No saved configurations yet.
+									</p>
+								) : (
+									configs.map((config) => (
+										<div
+											key={config.id}
+											className="bg-secondary border border-border rounded p-3 flex justify-between items-center group"
+										>
+											<span className="text-foreground font-medium truncate flex-1 pr-2">
+												{config.name}
+											</span>
+											<div className="flex gap-2">
+												<Button
+													variant="secondary"
+													size="sm"
+													onClick={() => handleLoadConfig(config)}
+												>
+													Load
+												</Button>
+												<Button
+													variant="destructive"
+													size="sm"
+													onClick={() => handleDeleteConfig(config.id)}
+												>
+													<Trash size={14} />
+												</Button>
+											</div>
+										</div>
+									))
+								)}
+							</div>
+
+							<Separator className="mb-4" />
+
+							<div className="flex gap-3">
+								<Button
+									variant="outline"
+									onClick={handleExport}
+									disabled={configs.length === 0}
+									className="flex-1"
+								>
+									<Download size={16} />
+									Export JSON
+								</Button>
+								<Button variant="outline" className="flex-1" asChild>
+									<label className="cursor-pointer">
+										<Upload size={16} />
+										Import JSON
+										<input
+											type="file"
+											accept=".json"
+											onChange={handleImport}
+											className="hidden"
+										/>
+									</label>
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
 				</div>
 
 				<div className="space-y-4">
@@ -467,25 +501,27 @@ function CalculatorPage() {
 					/>
 
 					{inputs.bwRollsInvested > 0 && (
-						<div className="glass rounded-lg p-4 border border-info/30">
-							<h3 className="text-sm font-medium text-foreground-muted uppercase tracking-wider mb-3">
-								$bw Roll Bonuses
-							</h3>
-							<div className="space-y-2 text-sm">
-								<div className="flex justify-between">
-									<span className="text-foreground-muted">Wish Bonus:</span>
-									<span className="text-foreground font-medium">
-										+{results.bwRollsWishBonus}%
-									</span>
+						<Card className="glass border-info/30">
+							<CardContent>
+								<h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
+									$bw Roll Bonuses
+								</h3>
+								<div className="space-y-2 text-sm">
+									<div className="flex justify-between items-center">
+										<span className="text-muted-foreground">Wish Bonus:</span>
+										<Badge variant="outline">
+											+{results.bwRollsWishBonus}%
+										</Badge>
+									</div>
+									<div className="flex justify-between items-center">
+										<span className="text-muted-foreground">Starwish Bonus:</span>
+										<Badge variant="outline">
+											+{results.bwRollsWishBonus + results.bwRollsStarwishBonus}%
+										</Badge>
+									</div>
 								</div>
-								<div className="flex justify-between">
-									<span className="text-foreground-muted">Starwish Bonus:</span>
-									<span className="text-foreground font-medium">
-										+{results.bwRollsWishBonus + results.bwRollsStarwishBonus}%
-									</span>
-								</div>
-							</div>
-						</div>
+							</CardContent>
+						</Card>
 					)}
 
 					<ResultCard
@@ -539,117 +575,123 @@ interface InputSectionProps {
 
 function PoolSettings({ inputs, updateInput }: InputSectionProps) {
 	return (
-		<div className="glass rounded-lg p-6 lantern-top">
-			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
-				Pool Settings
-			</h2>
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-				<InputField
-					label="Total in Roulette (e.g. $wg)"
-					value={inputs.totalPool}
-					onChange={(v) => updateInput("totalPool", v)}
-				/>
-				<InputField
-					label="Base Disabled Limit"
-					value={inputs.disabledLimit}
-					onChange={(v) => updateInput("disabledLimit", v)}
-					title="Base limit before Tower Perk 3"
-				/>
-				<InputField
-					label="Antidisabled ($ad)"
-					value={inputs.antiDisabled}
-					onChange={(v) => updateInput("antiDisabled", v)}
-				/>
-			</div>
-		</div>
+		<Card className="glass lantern-top">
+			<CardHeader className="border-b">
+				<CardTitle className="text-lg">Pool Settings</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<InputField
+						label="Total in Roulette (e.g. $wg)"
+						value={inputs.totalPool}
+						onChange={(v) => updateInput("totalPool", v)}
+					/>
+					<InputField
+						label="Base Disabled Limit"
+						value={inputs.disabledLimit}
+						onChange={(v) => updateInput("disabledLimit", v)}
+						title="Base limit before Tower Perk 3"
+					/>
+					<InputField
+						label="Antidisabled ($ad)"
+						value={inputs.antiDisabled}
+						onChange={(v) => updateInput("antiDisabled", v)}
+					/>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 
 function WishMultipliers({ inputs, updateInput }: InputSectionProps) {
 	return (
-		<div className="glass rounded-lg p-6 lantern-top">
-			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
-				Wish Multipliers
-			</h2>
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<SelectField
-					label="Silver Badge"
-					value={inputs.silverBadge}
-					onChange={(v) => updateInput("silverBadge", v)}
-					options={[
-						{ value: 0, label: "None" },
-						{ value: 1, label: "Level I (+25%)" },
-						{ value: 2, label: "Level II (+50%)" },
-						{ value: 3, label: "Level III (+75%)" },
-						{ value: 4, label: "Level IV (+100%)" },
-					]}
-				/>
-				<SelectField
-					label="Ruby Badge"
-					value={inputs.rubyBadge}
-					onChange={(v) => updateInput("rubyBadge", v)}
-					options={[
-						{ value: 0, label: "None" },
-						{ value: 1, label: "Level I (No Wish %)" },
-						{ value: 2, label: "Level II (+50%)" },
-						{ value: 3, label: "Level III (+50%)" },
-						{ value: 4, label: "Level IV (+50%)" },
-					]}
-				/>
-			</div>
-		</div>
+		<Card className="glass lantern-top">
+			<CardHeader className="border-b">
+				<CardTitle className="text-lg">Wish Multipliers</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<SelectField
+						label="Silver Badge"
+						value={inputs.silverBadge}
+						onChange={(v) => updateInput("silverBadge", v)}
+						options={[
+							{ value: 0, label: "None" },
+							{ value: 1, label: "Level I (+25%)" },
+							{ value: 2, label: "Level II (+50%)" },
+							{ value: 3, label: "Level III (+75%)" },
+							{ value: 4, label: "Level IV (+100%)" },
+						]}
+					/>
+					<SelectField
+						label="Ruby Badge"
+						value={inputs.rubyBadge}
+						onChange={(v) => updateInput("rubyBadge", v)}
+						options={[
+							{ value: 0, label: "None" },
+							{ value: 1, label: "Level I (No Wish %)" },
+							{ value: 2, label: "Level II (+50%)" },
+							{ value: 3, label: "Level III (+50%)" },
+							{ value: 4, label: "Level IV (+50%)" },
+						]}
+					/>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 
 function TowerPerks({ inputs, updateInput }: InputSectionProps) {
 	return (
-		<div className="glass rounded-lg p-6 lantern-top">
-			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
-				Kakera Tower Perks
-			</h2>
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-				<SelectField
-					label="Perk 2 (Starwish %)"
-					value={inputs.perk2}
-					onChange={(v) => updateInput("perk2", v)}
-					options={[
-						{ value: 0, label: "0 Levels" },
-						{ value: 1, label: "1 Level (+50%)" },
-						{ value: 2, label: "2 Levels (+100%)" },
-						{ value: 3, label: "3 Levels (+150%)" },
-						{ value: 4, label: "4 Levels (+200%)" },
-						{ value: 5, label: "5 Levels (+250%)" },
-					]}
-				/>
-				<SelectField
-					label="Perk 3 (DL Limit)"
-					value={inputs.perk3}
-					onChange={(v) => updateInput("perk3", v)}
-					options={[
-						{ value: 0, label: "0 Levels" },
-						{ value: 1, label: "1 Level (-140 $wg)" },
-						{ value: 2, label: "2 Levels (-280 $wg)" },
-						{ value: 3, label: "3 Levels (-420 $wg)" },
-						{ value: 4, label: "4 Levels (-560 $wg)" },
-						{ value: 5, label: "5 Levels (-700 $wg)" },
-					]}
-					title="Subtracts an extra 140 $wg from your pool per level"
-				/>
-				<SelectField
-					label="Perk 4 (Double Keys)"
-					value={inputs.perk4}
-					onChange={(v) => updateInput("perk4", v)}
-					options={[
-						{ value: 0, label: "0 Levels" },
-						{ value: 1, label: "1 Level (10%)" },
-						{ value: 2, label: "2 Levels (20%)" },
-						{ value: 3, label: "3 Levels (30%)" },
-						{ value: 4, label: "4 Levels (40%)" },
-						{ value: 5, label: "5 Levels (50%)" },
-					]}
-				/>
-			</div>
-		</div>
+		<Card className="glass lantern-top">
+			<CardHeader className="border-b">
+				<CardTitle className="text-lg">Kakera Tower Perks</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<SelectField
+						label="Perk 2 (Starwish %)"
+						value={inputs.perk2}
+						onChange={(v) => updateInput("perk2", v)}
+						options={[
+							{ value: 0, label: "0 Levels" },
+							{ value: 1, label: "1 Level (+50%)" },
+							{ value: 2, label: "2 Levels (+100%)" },
+							{ value: 3, label: "3 Levels (+150%)" },
+							{ value: 4, label: "4 Levels (+200%)" },
+							{ value: 5, label: "5 Levels (+250%)" },
+						]}
+					/>
+					<SelectField
+						label="Perk 3 (DL Limit)"
+						value={inputs.perk3}
+						onChange={(v) => updateInput("perk3", v)}
+						options={[
+							{ value: 0, label: "0 Levels" },
+							{ value: 1, label: "1 Level (-140 $wg)" },
+							{ value: 2, label: "2 Levels (-280 $wg)" },
+							{ value: 3, label: "3 Levels (-420 $wg)" },
+							{ value: 4, label: "4 Levels (-560 $wg)" },
+							{ value: 5, label: "5 Levels (-700 $wg)" },
+						]}
+						title="Subtracts an extra 140 $wg from your pool per level"
+					/>
+					<SelectField
+						label="Perk 4 (Double Keys)"
+						value={inputs.perk4}
+						onChange={(v) => updateInput("perk4", v)}
+						options={[
+							{ value: 0, label: "0 Levels" },
+							{ value: 1, label: "1 Level (10%)" },
+							{ value: 2, label: "2 Levels (20%)" },
+							{ value: 3, label: "3 Levels (30%)" },
+							{ value: 4, label: "4 Levels (40%)" },
+							{ value: 5, label: "5 Levels (50%)" },
+						]}
+					/>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -660,81 +702,85 @@ function RollSettings({ inputs, updateInput }: InputSectionProps) {
 	};
 
 	return (
-		<div className="glass rounded-lg p-6 lantern-top">
-			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
-				Hourly Roll Settings
-			</h2>
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<InputField
-					label="Total Rolls Available"
-					value={inputs.totalRolls}
-					onChange={(v) => updateInput("totalRolls", v)}
-					min={0}
-					title="Total number of rolls you have per hour"
-				/>
-				<InputField
-					label="Rolls Invested in $bw"
-					value={inputs.bwRollsInvested}
-					onChange={(v) => updateInput("bwRollsInvested", v)}
-					min={0}
-					max={inputs.totalRolls}
-					title="Number of rolls invested in boostwish for bonus spawn rates"
-				/>
-			</div>
-			<div className="mt-4 flex gap-2">
-				<button
-					type="button"
-					onClick={() => handleOptimize("wish")}
-					className="flex-1 text-sm bg-night-700 hover:bg-sakura-500 text-foreground py-2 px-3 rounded transition-colors"
-				>
-					Optimize for Wish
-				</button>
-				<button
-					type="button"
-					onClick={() => handleOptimize("starwish")}
-					className="flex-1 text-sm bg-night-700 hover:bg-warning text-foreground py-2 px-3 rounded transition-colors"
-				>
-					Optimize for Starwish
-				</button>
-			</div>
-			{inputs.bwRollsInvested > 0 && (
-				<div className="mt-4 p-3 bg-info/10 border border-info/30 rounded-lg">
-					<p className="text-sm text-foreground-muted">
-						Effective rolls per hour:{" "}
-						<span className="text-foreground font-medium">
-							{Math.max(0, inputs.totalRolls - inputs.bwRollsInvested)}
-						</span>
-					</p>
-					<p className="text-xs text-foreground-subtle mt-1">
-						Each roll invested grants +20% wish spawn (decreases at thresholds:
-						15% after 5, 10% after 15, 5% after 100, 1% after 200) and +10%
-						starwish (5% after 100, 1% after 200)
-					</p>
+		<Card className="glass lantern-top">
+			<CardHeader className="border-b">
+				<CardTitle className="text-lg">Hourly Roll Settings</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<InputField
+						label="Total Rolls Available"
+						value={inputs.totalRolls}
+						onChange={(v) => updateInput("totalRolls", v)}
+						min={0}
+						title="Total number of rolls you have per hour"
+					/>
+					<InputField
+						label="Rolls Invested in $bw"
+						value={inputs.bwRollsInvested}
+						onChange={(v) => updateInput("bwRollsInvested", v)}
+						min={0}
+						max={inputs.totalRolls}
+						title="Number of rolls invested in boostwish for bonus spawn rates"
+					/>
 				</div>
-			)}
-		</div>
+				<div className="mt-4 flex gap-2">
+					<Button
+						variant="secondary"
+						onClick={() => handleOptimize("wish")}
+						className="flex-1 text-sm"
+					>
+						Optimize for Wish
+					</Button>
+					<Button
+						variant="secondary"
+						onClick={() => handleOptimize("starwish")}
+						className="flex-1 text-sm"
+					>
+						Optimize for Starwish
+					</Button>
+				</div>
+				{inputs.bwRollsInvested > 0 && (
+					<div className="mt-4 p-3 bg-info/10 border border-info/30 rounded-lg">
+						<p className="text-sm text-muted-foreground">
+							Effective rolls per hour:{" "}
+							<span className="text-foreground font-medium">
+								{Math.max(0, inputs.totalRolls - inputs.bwRollsInvested)}
+							</span>
+						</p>
+						<p className="text-xs text-muted-foreground/70 mt-1">
+							Each roll invested grants +20% wish spawn (decreases at thresholds:
+							15% after 5, 10% after 15, 5% after 100, 1% after 200) and +10%
+							starwish (5% after 100, 1% after 200)
+						</p>
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
 
 function OwnedCharacters({ inputs, updateInput }: InputSectionProps) {
 	return (
-		<div className="glass rounded-lg p-6 lantern-top">
-			<h2 className="text-xl font-semibold mb-4 border-b border-border pb-2">
-				Owned Characters ($persrare 1)
-			</h2>
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<InputField
-					label="Total Owned Characters"
-					value={inputs.ownedTotal}
-					onChange={(v) => updateInput("ownedTotal", v)}
-				/>
-				<InputField
-					label="Owned but Disabled"
-					value={inputs.ownedDisabled}
-					onChange={(v) => updateInput("ownedDisabled", v)}
-				/>
-			</div>
-		</div>
+		<Card className="glass lantern-top">
+			<CardHeader className="border-b">
+				<CardTitle className="text-lg">Owned Characters ($persrare 1)</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<InputField
+						label="Total Owned Characters"
+						value={inputs.ownedTotal}
+						onChange={(v) => updateInput("ownedTotal", v)}
+					/>
+					<InputField
+						label="Owned but Disabled"
+						value={inputs.ownedDisabled}
+						onChange={(v) => updateInput("ownedDisabled", v)}
+					/>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -756,23 +802,36 @@ function InputField({
 	title,
 }: InputFieldProps) {
 	const id = `input-${label.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+
+	const labelContent = title ? (
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Label
+						htmlFor={id}
+						className="cursor-help border-b border-dotted border-muted-foreground/50"
+					>
+						{label}
+					</Label>
+				</TooltipTrigger>
+				<TooltipContent>{title}</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	) : (
+		<Label htmlFor={id}>{label}</Label>
+	);
+
 	return (
-		<div>
-			<label
-				htmlFor={id}
-				className="block text-sm font-medium text-foreground-muted mb-1"
-				title={title}
-			>
-				{label}
-			</label>
-			<input
+		<div className="space-y-1.5">
+			{labelContent}
+			<Input
 				id={id}
 				type="number"
 				value={value}
 				onChange={(e) => onChange(parseInt(e.target.value) || 0)}
 				min={min}
 				max={max}
-				className="w-full bg-background-secondary border border-border rounded-lg px-3 py-2.5 text-foreground focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition-all"
+				className="h-9"
 			/>
 		</div>
 	);
@@ -793,28 +852,39 @@ function SelectField({
 	options,
 	title,
 }: SelectFieldProps) {
-	const id = `select-${label.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+	const labelContent = title ? (
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Label className="cursor-help border-b border-dotted border-muted-foreground/50">
+						{label}
+					</Label>
+				</TooltipTrigger>
+				<TooltipContent>{title}</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	) : (
+		<Label>{label}</Label>
+	);
+
 	return (
-		<div>
-			<label
-				htmlFor={id}
-				className="block text-sm font-medium text-foreground-muted mb-1"
-				title={title}
+		<div className="space-y-1.5">
+			{labelContent}
+			<Select
+				value={String(value)}
+				onValueChange={(v) => onChange(parseInt(v))}
 			>
-				{label}
-			</label>
-			<select
-				id={id}
-				value={value}
-				onChange={(e) => onChange(parseInt(e.target.value))}
-				className="w-full bg-background-secondary border border-border rounded-lg px-3 py-2.5 text-foreground focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition-all"
-			>
-				{options.map((opt) => (
-					<option key={opt.value} value={opt.value}>
-						{opt.label}
-					</option>
-				))}
-			</select>
+				<SelectTrigger className="w-full h-9">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{options.map((opt) => (
+						<SelectItem key={opt.value} value={String(opt.value)}>
+							{opt.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 		</div>
 	);
 }
@@ -843,7 +913,7 @@ function ResultCard({
 	variant = "default",
 }: ResultCardProps) {
 	const variantStyles = {
-		primary: "border-sakura-500/50",
+		primary: "border-primary/50",
 		warning: "border-warning/30",
 		success: "border-success/30",
 		info: "border-info/30",
@@ -851,56 +921,72 @@ function ResultCard({
 	};
 
 	const textStyles = {
-		primary: "text-sakura-500",
+		primary: "text-primary",
 		warning: "text-warning",
 		success: "text-success",
 		info: "text-info",
 		default: "text-foreground",
 	};
 
+	const badgeVariants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+		primary: "default",
+		warning: "outline",
+		success: "outline",
+		info: "outline",
+		default: "secondary",
+	};
+
 	return (
-		<div className={`glass rounded-lg p-5 border ${variantStyles[variant]}`}>
-			<h3 className="text-sm font-medium text-foreground-muted uppercase tracking-wider flex items-center gap-2">
-				{icon}
-				{title}
-			</h3>
-			{value && (
-				<p
-					className={`text-4xl font-bold text-foreground mt-1 ${textStyles[variant]}`}
-				>
-					{value}
-				</p>
-			)}
-			{percent && (
-				<div className="mt-2 flex items-baseline gap-2">
-					<p className={`text-3xl font-bold ${textStyles[variant]}`}>
-						{percent}
-					</p>
+		<Card className={`glass ${variantStyles[variant]}`}>
+			<CardContent>
+				<div className="flex items-center justify-between">
+					<h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+						{icon}
+						{title}
+					</h3>
+					{mult && (
+						<Badge variant={badgeVariants[variant]}>
+							{mult}x
+						</Badge>
+					)}
 				</div>
-			)}
-			{odds && (
-				<p className="text-lg text-foreground-muted mt-1 font-mono bg-background-secondary inline-block px-3 py-1 rounded-md">
-					{odds}
-				</p>
-			)}
-			{hitsPerHour !== undefined && hitsPerHour > 0 && (
-				<p className="text-sm text-foreground-muted mt-2">
-					~
-					<span className="text-foreground font-medium">
-						{hitsPerHour.toFixed(5)}
-					</span>{" "}
-					hits/hour
-				</p>
-			)}
-			{mult && (
-				<p className="text-xs text-foreground-subtle mt-2">
-					Multiplier: <span className="text-foreground">{mult}</span>x
-					{subtext && <span className="text-sakura-500 ml-1">{subtext}</span>}
-				</p>
-			)}
-			{!mult && subtext && (
-				<p className="text-xs text-foreground-subtle mt-2">{subtext}</p>
-			)}
-		</div>
+				{value && (
+					<p
+						className={`text-4xl font-bold text-foreground mt-1 ${textStyles[variant]}`}
+					>
+						{value}
+					</p>
+				)}
+				{percent && (
+					<div className="mt-2 flex items-baseline gap-2">
+						<p className={`text-3xl font-bold ${textStyles[variant]}`}>
+							{percent}
+						</p>
+					</div>
+				)}
+				{odds && (
+					<Badge variant="outline" className="mt-1 font-mono text-sm px-3 py-1 h-auto">
+						{odds}
+					</Badge>
+				)}
+				{hitsPerHour !== undefined && hitsPerHour > 0 && (
+					<p className="text-sm text-muted-foreground mt-2">
+						~
+						<span className="text-foreground font-medium">
+							{hitsPerHour.toFixed(5)}
+						</span>{" "}
+						hits/hour
+					</p>
+				)}
+				{mult && subtext && (
+					<p className="text-xs text-muted-foreground/70 mt-2">
+						<span className="text-primary">{subtext}</span>
+					</p>
+				)}
+				{!mult && subtext && (
+					<p className="text-xs text-muted-foreground/70 mt-2">{subtext}</p>
+				)}
+			</CardContent>
+		</Card>
 	);
 }

@@ -24,6 +24,33 @@ import {ImportModal} from "@/components/collection/ImportModal";
 import {useAuth} from "@/hooks/useAuth";
 import {collectionApi} from "@/lib/api";
 import type {CollectionEntry, CollectionExportRequest} from "@/types";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {NativeSelect, NativeSelectOption} from "@/components/ui/native-select";
+import {Textarea} from "@/components/ui/textarea";
+import {Label} from "@/components/ui/label";
+import {Checkbox} from "@/components/ui/checkbox";
+import {Badge} from "@/components/ui/badge";
+import {Spinner} from "@/components/ui/spinner";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/collection")({
     component: CollectionPage,
@@ -41,23 +68,23 @@ function useDebouncedValue<T>(value: T, delay: number): T {
 }
 
 const CharacterCard = memo(function CharacterCard({
-                                                      entry,
-                                                      onEdit,
-                                                      onDelete,
-                                                  }: {
+    entry,
+    onEdit,
+    onDelete,
+}: {
     entry: CollectionEntry;
     onEdit: (entry: CollectionEntry) => void;
     onDelete: (entry: CollectionEntry) => void;
 }) {
     const character = entry.character;
     const keyColors: Record<string, string> = {
-        bronzekey: "text-amber-600",
-        silverkey: "text-gray-400",
-        goldkey: "text-yellow-500",
-        chaoskey: "text-purple-500",
-        rubykey: "text-red-500",
-        emeraldkey: "text-emerald-500",
-        sapphirekey: "text-blue-500",
+        bronzekey: "text-warning",
+        silverkey: "text-muted-foreground",
+        goldkey: "text-warning",
+        chaoskey: "text-chart-3",
+        rubykey: "text-destructive",
+        emeraldkey: "text-success",
+        sapphirekey: "text-info",
     };
 
     const imageSrc = character.storedImageId
@@ -68,16 +95,14 @@ const CharacterCard = memo(function CharacterCard({
 
     return (
         <div
-            className={`glass rounded-lg p-4 lantern-top hover:shadow-glow-sakura transition-all group ${isDisabled ? "ring-2 ring-torii-500/50 bg-torii-500/5" : ""}`}
+            className={`glass rounded-lg p-4 lantern-top hover:shadow-lg transition-all group relative ${isDisabled ? "ring-2 ring-destructive/50 bg-destructive/5" : ""}`}
         >
             {isDisabled && (
-                <div className="absolute top-2 right-2 z-10">
-					<span className="px-2 py-0.5 text-xs font-semibold bg-torii-500/20 text-torii-300 rounded-full border border-torii-500/30">
-						Disabled
-					</span>
-                </div>
+                <Badge variant="destructive" className="absolute top-2 right-2 z-10">
+                    Disabled
+                </Badge>
             )}
-            <div className="aspect-square bg-background-tertiary rounded-md mb-3 flex items-center justify-center overflow-hidden relative">
+            <div className="aspect-square bg-muted rounded-md mb-3 flex items-center justify-center overflow-hidden relative">
                 {imageSrc ? (
                     <img
                         src={imageSrc}
@@ -86,12 +111,12 @@ const CharacterCard = memo(function CharacterCard({
                         loading="lazy"
                     />
                 ) : (
-                    <span className="text-foreground-subtle text-4xl">?</span>
+                    <span className="text-muted-foreground/70 text-4xl">?</span>
                 )}
             </div>
             <div className="flex items-start justify-between gap-2">
                 <h3
-                    className={`font-semibold truncate ${isDisabled ? "text-torii-300" : ""}`}
+                    className={`font-semibold truncate ${isDisabled ? "text-destructive" : ""}`}
                     title={character.name}
                 >
                     {character.name}
@@ -101,35 +126,35 @@ const CharacterCard = memo(function CharacterCard({
                         <Key
                             size={16}
                             className={
-                                keyColors[character.keyType] || "text-foreground-subtle"
+                                keyColors[character.keyType] || "text-muted-foreground/70"
                             }
                             weight="fill"
                         />
                         {character.keyCount && (
                             <span
-                                className={`text-xs ${keyColors[character.keyType] || "text-foreground-subtle"}`}
+                                className={`text-xs ${keyColors[character.keyType] || "text-muted-foreground/70"}`}
                             >
-								×{character.keyCount}
-							</span>
+                                ×{character.keyCount}
+                            </span>
                         )}
                     </div>
                 )}
             </div>
             <div className="flex items-center justify-between mt-2 text-sm">
-                <span className="text-foreground-muted">#{character.rank ?? "?"}</span>
+                <span className="text-muted-foreground">#{character.rank ?? "?"}</span>
                 <div className="flex items-center gap-2">
                     {character.sp && (
-                        <span className="text-blue-400">
-							{character.sp.toLocaleString()} sp
-						</span>
+                        <span className="text-info">
+                            {character.sp.toLocaleString()} sp
+                        </span>
                     )}
-                    <span className="text-sakura-400">
-						{character.kakera?.toLocaleString() ?? "?"} ka
-					</span>
+                    <span className="text-primary">
+                        {character.kakera?.toLocaleString() ?? "?"} ka
+                    </span>
                 </div>
             </div>
             {character.claims !== null && (
-                <p className="text-xs text-foreground-subtle mt-1">
+                <p className="text-xs text-muted-foreground/70 mt-1">
                     {character.claims} claims
                     {character.images !== null && ` · ${character.images} img`}
                     {character.gifs !== null && ` + ${character.gifs} gif`}
@@ -139,17 +164,16 @@ const CharacterCard = memo(function CharacterCard({
             {character.kakeraStats && character.kakeraStats.totalValue > 0 && (
                 <div className="relative mt-2 pt-2 border-t border-border/50">
                     <div className="flex items-center justify-between text-xs">
-                        <span className="text-foreground-muted">User Kakera</span>
-                        <div className="relative group/tooltip">
-                            <div className="flex items-center gap-1 cursor-default hover:text-sakura-300 transition-colors font-bold text-sakura-300">
-                                <span>{character.kakeraStats.totalValue.toLocaleString()}</span>
-                                <CaretDown size={12} weight="bold" className="opacity-50"/>
-                            </div>
-
-                            {/* Simple Absolute Tooltip Overlay */}
-                            <div
-                                className="hidden group-hover/tooltip:block absolute bottom-full right-0 mb-2 z-[100] glass p-2.5 rounded-lg min-w-[140px] shadow-2xl border border-border/50 pointer-events-none">
-                                <p className="text-[10px] uppercase tracking-wider text-foreground-muted mb-1.5 border-b border-border/30 pb-1 font-bold text-center">
+                        <span className="text-muted-foreground">User Kakera</span>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="flex items-center gap-1 cursor-default hover:text-primary transition-colors font-bold text-primary">
+                                    <span>{character.kakeraStats.totalValue.toLocaleString()}</span>
+                                    <CaretDown size={12} weight="bold" className="opacity-50"/>
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="glass p-2.5 min-w-[140px]">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 border-b border-border/30 pb-1 font-bold text-center">
                                     Breakdown
                                 </p>
                                 <div className="space-y-1">
@@ -160,46 +184,48 @@ const CharacterCard = memo(function CharacterCard({
                                                 className="flex justify-between items-center gap-4"
                                             >
                                                 <span className="capitalize text-[11px]">{type}</span>
-                                                <span className="font-mono text-sakura-400 font-bold text-[11px]">
-													{value.toLocaleString()}
-												</span>
+                                                <span className="font-mono text-primary font-bold text-[11px]">
+                                                    {value.toLocaleString()}
+                                                </span>
                                             </div>
                                         ),
                                     )}
                                 </div>
-                            </div>
-                        </div>
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                 </div>
             )}
 
             <div className="flex gap-2 mt-3 pt-2 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                    type="button"
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => onEdit(entry)}
-                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-background-tertiary hover:bg-background-secondary rounded transition-colors"
+                    className="flex-1"
                 >
                     <Pencil size={14}/>
                     Edit
-                </button>
-                <button
-                    type="button"
+                </Button>
+                <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => onDelete(entry)}
-                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs bg-torii-500/20 hover:bg-torii-500/40 text-torii-300 rounded transition-colors"
+                    className="flex-1"
                 >
                     <Trash size={14}/>
                     Remove
-                </button>
+                </Button>
             </div>
         </div>
     );
 });
 
 function ExportModal({
-                         isOpen,
-                         onClose,
-                         onExport,
-                     }: {
+    isOpen,
+    onClose,
+    onExport,
+}: {
     isOpen: boolean;
     onClose: () => void;
     onExport: (request: CollectionExportRequest) => Promise<void>;
@@ -229,19 +255,19 @@ function ExportModal({
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="glass rounded-lg p-6 max-w-md w-full mx-4">
-                <h2 className="text-xl font-bold mb-4">Export Collection</h2>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Export Collection</DialogTitle>
+                </DialogHeader>
 
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="minKeys" className="block text-sm text-foreground-muted mb-1">
+                        <Label htmlFor="minKeys" className="mb-1">
                             Minimum Keys
-                        </label>
-                        <input
+                        </Label>
+                        <Input
                             id="minKeys"
                             type="number"
                             value={minKeys}
@@ -250,34 +276,34 @@ function ExportModal({
                             }
                             placeholder="Any"
                             min={0}
-                            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+                            className="h-9"
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="sortBy" className="block text-sm text-foreground-muted mb-1">
+                        <Label htmlFor="sortBy" className="mb-1">
                             Sort By
-                        </label>
-                        <select
+                        </Label>
+                        <NativeSelect
                             id="sortBy"
                             value={sortBy}
                             onChange={(e) =>
                                 setSortBy(e.target.value as CollectionExportRequest["sortBy"])
                             }
-                            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+                            className="w-full"
                         >
-                            <option value="kakera">Kakera Value</option>
-                            <option value="keyCount">Key Count</option>
-                            <option value="sp">Spheres</option>
-                            <option value="name">Name</option>
-                        </select>
+                            <NativeSelectOption value="kakera">Kakera Value</NativeSelectOption>
+                            <NativeSelectOption value="keyCount">Key Count</NativeSelectOption>
+                            <NativeSelectOption value="sp">Spheres</NativeSelectOption>
+                            <NativeSelectOption value="name">Name</NativeSelectOption>
+                        </NativeSelect>
                     </div>
 
                     <div>
-                        <label htmlFor="sortOrder" className="block text-sm text-foreground-muted mb-1">
+                        <Label htmlFor="sortOrder" className="mb-1">
                             Sort Order
-                        </label>
-                        <select
+                        </Label>
+                        <NativeSelect
                             id="sortOrder"
                             value={sortOrder}
                             onChange={(e) =>
@@ -285,18 +311,18 @@ function ExportModal({
                                     e.target.value as CollectionExportRequest["sortOrder"],
                                 )
                             }
-                            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+                            className="w-full"
                         >
-                            <option value="desc">Descending</option>
-                            <option value="asc">Ascending</option>
-                        </select>
+                            <NativeSelectOption value="desc">Descending</NativeSelectOption>
+                            <NativeSelectOption value="asc">Ascending</NativeSelectOption>
+                        </NativeSelect>
                     </div>
 
                     <div>
-                        <label htmlFor="limitResults" className="block text-sm text-foreground-muted mb-1">
+                        <Label htmlFor="limitResults" className="mb-1">
                             Limit Results
-                        </label>
-                        <input
+                        </Label>
+                        <Input
                             id="limitResults"
                             type="number"
                             value={limit}
@@ -305,56 +331,46 @@ function ExportModal({
                             }
                             placeholder="All"
                             min={1}
-                            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+                            className="h-9"
                         />
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
+                        <Checkbox
                             id="exclude-disabled"
                             checked={excludeDisabled}
-                            onChange={(e) => setExcludeDisabled(e.target.checked)}
-                            className="w-4 h-4 rounded border-border bg-background-tertiary accent-sakura-500"
+                            onCheckedChange={(checked) => setExcludeDisabled(checked as boolean)}
                         />
-                        <label
-                            htmlFor="exclude-disabled"
-                            className="text-sm text-foreground-muted"
-                        >
+                        <Label htmlFor="exclude-disabled">
                             Exclude disabled characters
-                        </label>
+                        </Label>
                     </div>
                 </div>
 
-                <div className="flex gap-3 mt-6">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex-1 px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
-                    >
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>
                         Cancel
-                    </button>
-                    <button
-                        type="button"
+                    </Button>
+                    <Button
                         onClick={handleExport}
                         disabled={isExporting}
-                        className="flex-1 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="h-9 px-4 text-sm"
                     >
                         <Download size={18}/>
                         {isExporting ? "Exporting..." : "Export JSON"}
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
 function EditModal({
-                       entry,
-                       isOpen,
-                       onClose,
-                       onSave,
-                   }: {
+    entry,
+    isOpen,
+    onClose,
+    onSave,
+}: {
     entry: CollectionEntry | null;
     isOpen: boolean;
     onClose: () => void;
@@ -388,25 +404,22 @@ function EditModal({
         }
     };
 
-    if (!isOpen || !entry) return null;
-
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="glass rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-2">Edit Character</h2>
-                <p className="text-foreground-muted text-sm mb-4">
-                    {entry.character.name}
-                </p>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Edit Character</DialogTitle>
+                    <DialogDescription>
+                        {entry?.character.name}
+                    </DialogDescription>
+                </DialogHeader>
 
                 <div className="space-y-4">
                     <div>
-                        <label
-                            htmlFor="edit-key-count"
-                            className="block text-sm text-foreground-muted mb-1"
-                        >
+                        <Label htmlFor="edit-key-count" className="mb-1">
                             Key Count
-                        </label>
-                        <input
+                        </Label>
+                        <Input
                             id="edit-key-count"
                             type="number"
                             value={keyCount}
@@ -415,60 +428,51 @@ function EditModal({
                             }
                             min={0}
                             placeholder="0"
-                            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
+                            className="h-9"
                         />
-                        <p className="text-xs text-foreground-subtle mt-1">
+                        <p className="text-xs text-muted-foreground/70 mt-1">
                             Key type is automatically determined: Bronze (1-2), Silver (3-5),
                             Gold (6-9), Chaos (10+)
                         </p>
                     </div>
 
                     <div>
-                        <label
-                            htmlFor="edit-notes"
-                            className="block text-sm text-foreground-muted mb-1"
-                        >
+                        <Label htmlFor="edit-notes" className="mb-1">
                             Notes
-                        </label>
-                        <textarea
+                        </Label>
+                        <Textarea
                             id="edit-notes"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Add notes about this character..."
                             rows={4}
-                            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none resize-none"
+                            className="resize-none"
                         />
                     </div>
                 </div>
 
-                <div className="flex gap-3 mt-6">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex-1 px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
-                    >
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>
                         Cancel
-                    </button>
-                    <button
-                        type="button"
+                    </Button>
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="flex-1 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {isSaving ? "Saving..." : "Save"}
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
 function DeleteConfirmModal({
-                                entry,
-                                isOpen,
-                                onClose,
-                                onConfirm,
-                            }: {
+    entry,
+    isOpen,
+    onClose,
+    onConfirm,
+}: {
     entry: CollectionEntry | null;
     isOpen: boolean;
     onClose: () => void;
@@ -487,39 +491,27 @@ function DeleteConfirmModal({
         }
     };
 
-    if (!isOpen || !entry) return null;
-
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="glass rounded-lg p-6 max-w-sm w-full mx-4">
-                <h2 className="text-xl font-bold mb-2">Remove Character</h2>
-                <p className="text-foreground-muted mb-4">
-                    Are you sure you want to remove{" "}
-                    <span className="text-foreground font-semibold">
-						{entry.character.name}
-					</span>{" "}
-                    from your collection?
-                </p>
-
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex-1 px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleConfirm}
-                        disabled={isDeleting}
-                        className="flex-1 px-4 py-2 bg-torii-500 text-background font-semibold rounded-lg hover:bg-torii-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
+        <AlertDialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Remove Character</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to remove{" "}
+                        <span className="text-foreground font-semibold">
+                            {entry?.character.name}
+                        </span>{" "}
+                        from your collection?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirm} disabled={isDeleting}>
                         {isDeleting ? "Removing..." : "Remove"}
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 
@@ -547,7 +539,7 @@ function CollectionPage() {
     const navigate = useNavigate();
 
     const debouncedSearch = useDebouncedValue(search, 300);
-    
+
     useEffect(() => {
         setPage(1);
     }, [debouncedSearch, minKeys, minKakera, disabledFilter]);
@@ -600,9 +592,9 @@ function CollectionPage() {
 
     const importMutation = useMutation({
         mutationFn: ({
-                         data,
-                         disabledCharacters,
-                     }: {
+            data,
+            disabledCharacters,
+        }: {
             data: string;
             disabledCharacters?: string;
         }) => collectionApi.import(data, disabledCharacters),
@@ -664,7 +656,7 @@ function CollectionPage() {
     if (authLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="animate-spin w-8 h-8 border-2 border-sakura-500 border-t-transparent rounded-full"/>
+                <Spinner className="size-8 text-primary"/>
             </div>
         );
     }
@@ -672,19 +664,18 @@ function CollectionPage() {
     if (!isAuthenticated) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <FolderOpen size={48} className="text-foreground-subtle mb-4"/>
+                <FolderOpen size={48} className="text-muted-foreground/70 mb-4"/>
                 <h2 className="text-xl font-semibold mb-2">Login Required</h2>
-                <p className="text-foreground-muted mb-4">
+                <p className="text-muted-foreground mb-4">
                     Please login to view your collection
                 </p>
-                <button
-                    type="button"
+                <Button
                     onClick={() => navigate({to: "/"})}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors"
+                    className="h-9 px-6 text-sm"
                 >
                     <SignIn size={20} weight="bold"/>
                     Login with Discord
-                </button>
+                </Button>
             </div>
         );
     }
@@ -692,7 +683,7 @@ function CollectionPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="animate-spin w-8 h-8 border-2 border-sakura-500 border-t-transparent rounded-full"/>
+                <Spinner className="size-8 text-primary"/>
             </div>
         );
     }
@@ -700,14 +691,12 @@ function CollectionPage() {
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <p className="text-torii-500 mb-4">Failed to load collection</p>
-                <button
-                    type="button"
+                <p className="text-destructive mb-4">Failed to load collection</p>
+                <Button
                     onClick={() => window.location.reload()}
-                    className="px-4 py-2 bg-sakura-500 text-background rounded-lg"
                 >
                     Retry
-                </button>
+                </Button>
             </div>
         );
     }
@@ -718,44 +707,43 @@ function CollectionPage() {
                 <div>
                     <h1 className="text-2xl font-bold">My Collection</h1>
                     {stats && (
-                        <p className="text-foreground-muted text-sm mt-1">
+                        <p className="text-muted-foreground text-sm mt-1">
                             {stats.totalCharacters} characters ·{" "}{stats.disabledCount} disabled ·{" "}
                             {stats.totalKakera.toLocaleString()} total kakera
                         </p>
                     )}
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        type="button"
+                    <Button
+                        variant="outline"
                         onClick={() => setShowExport(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors"
+                        className="h-9 px-4 text-sm"
                     >
                         <Download size={18}/>
                         Export
-                    </button>
+                    </Button>
                     {imageStatus &&
                         imageStatus.pending === 0 &&
                         imageStatus.stored < imageStatus.total && (
-                            <button
-                                type="button"
+                            <Button
+                                variant="outline"
                                 onClick={() => processImagesMutation.mutate()}
                                 disabled={processImagesMutation.isPending}
-                                className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors disabled:opacity-50"
+                                className="h-9 px-4 text-sm"
                             >
                                 <Images size={18}/>
                                 {processImagesMutation.isPending
                                     ? "Starting..."
                                     : "Cache Images"}
-                            </button>
+                            </Button>
                         )}
-                    <button
-                        type="button"
+                    <Button
                         onClick={() => setShowImport(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors"
+                        className="h-9 px-4 text-sm"
                     >
                         <Upload size={18}/>
                         Import
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -763,18 +751,18 @@ function CollectionPage() {
                 (imageStatus.pending > 0 || imageStatus.processing > 0) && (
                     <div className="glass rounded-lg px-4 py-3 mb-6 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="animate-spin w-4 h-4 border-2 border-sakura-500 border-t-transparent rounded-full"/>
+                            <Spinner className="size-4 text-primary"/>
                             <span className="text-sm">
-								Processing images: {imageStatus.stored}/{imageStatus.total}{" "}
+                                Processing images: {imageStatus.stored}/{imageStatus.total}{" "}
                                 cached
                                 {imageStatus.pending > 0 && ` · ${imageStatus.pending} pending`}
-							</span>
+                            </span>
                         </div>
                     </div>
                 )}
 
             {imageStatus && imageStatus.failed > 0 && (
-                <div className="bg-torii-500/10 border border-torii-500/30 rounded-lg px-4 py-3 mb-6 text-sm text-torii-300">
+                <div className="bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-3 mb-6 text-sm text-destructive">
                     {imageStatus.failed} images failed to download
                 </div>
             )}
@@ -783,9 +771,9 @@ function CollectionPage() {
                 <div className="flex gap-4 mb-6 flex-wrap">
                     {Object.entries(stats.keyDistribution).map(([key, count]) => (
                         <div key={key} className="glass rounded-lg px-3 py-2 text-sm">
-							<span className="text-foreground-muted capitalize">
-								{key.replace("key", "")}:{" "}
-							</span>
+                            <span className="text-muted-foreground capitalize">
+                                {key.replace("key", "")}:{" "}
+                            </span>
                             <span className="font-semibold">{count}</span>
                         </div>
                     ))}
@@ -795,58 +783,56 @@ function CollectionPage() {
             <div className="flex gap-4 mb-6">
                 <div className="relative flex-1">
                     <MagnifyingGlass
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70"
                         size={18}
                     />
-                    <input
+                    <Input
                         key="collection-search"
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search characters..."
-                        className="w-full pl-10 pr-4 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 focus:ring-1 focus:ring-sakura-500 outline-none"
+                        className="h-9 pl-10 pr-4"
                     />
                 </div>
-                <button
-                    type="button"
+                <Button
+                    variant={showFilters ? "default" : "outline"}
+                    size="icon"
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`p-2 border rounded-lg transition-colors ${showFilters ? "bg-sakura-500/20 border-sakura-500 text-sakura-400" : "bg-background-tertiary border-border hover:border-sakura-500"}`}
                     title="Filters"
+                    className={showFilters ? "bg-primary/20 border-primary text-primary hover:bg-primary/30" : ""}
                 >
                     <Funnel size={20}/>
-                </button>
-                <select
+                </Button>
+                <NativeSelect
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="px-4 py-2 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none"
                 >
-                    <option value="rank">Rank</option>
-                    <option value="name">Name</option>
-                    <option value="kakera">Kakera</option>
-                    <option value="user_kakera">Best Performing</option>
-                    <option value="claims">Claims</option>
-                    <option value="keys">Keys</option>
-                </select>
-                <button
-                    type="button"
+                    <NativeSelectOption value="rank">Rank</NativeSelectOption>
+                    <NativeSelectOption value="name">Name</NativeSelectOption>
+                    <NativeSelectOption value="kakera">Kakera</NativeSelectOption>
+                    <NativeSelectOption value="user_kakera">Best Performing</NativeSelectOption>
+                    <NativeSelectOption value="claims">Claims</NativeSelectOption>
+                    <NativeSelectOption value="keys">Keys</NativeSelectOption>
+                </NativeSelect>
+                <Button
+                    variant="outline"
+                    size="icon"
                     onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                    className={`p-2 bg-background-tertiary border border-border rounded-lg hover:border-sakura-500 transition-colors ${sortOrder === "desc" ? "rotate-180" : ""}`}
+                    className={sortOrder === "desc" ? "rotate-180" : ""}
                 >
                     <SortAscending size={20}/>
-                </button>
+                </Button>
             </div>
 
             {showFilters && (
                 <div className="glass rounded-lg p-4 mb-6">
                     <div className="flex items-center gap-6 flex-wrap">
                         <div className="flex items-center gap-2">
-                            <label
-                                htmlFor="filter-min-keys"
-                                className="text-sm text-foreground-muted"
-                            >
+                            <Label htmlFor="filter-min-keys">
                                 Min Keys:
-                            </label>
-                            <input
+                            </Label>
+                            <Input
                                 id="filter-min-keys"
                                 type="number"
                                 value={minKeys}
@@ -857,17 +843,14 @@ function CollectionPage() {
                                 }
                                 placeholder="0"
                                 min={0}
-                                className="w-20 px-2 py-1 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none text-sm"
+                                className="w-20"
                             />
                         </div>
                         <div className="flex items-center gap-2">
-                            <label
-                                htmlFor="filter-min-kakera"
-                                className="text-sm text-foreground-muted"
-                            >
+                            <Label htmlFor="filter-min-kakera">
                                 Min Kakera:
-                            </label>
-                            <input
+                            </Label>
+                            <Input
                                 id="filter-min-kakera"
                                 type="number"
                                 value={minKakera}
@@ -878,17 +861,14 @@ function CollectionPage() {
                                 }
                                 placeholder="0"
                                 min={0}
-                                className="w-24 px-2 py-1 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none text-sm"
+                                className="w-24"
                             />
                         </div>
                         <div className="flex items-center gap-2">
-                            <label
-                                htmlFor="filter-disabled"
-                                className="text-sm text-foreground-muted"
-                            >
+                            <Label htmlFor="filter-disabled">
                                 Status:
-                            </label>
-                            <select
+                            </Label>
+                            <NativeSelect
                                 id="filter-disabled"
                                 value={disabledFilter}
                                 onChange={(e) =>
@@ -896,27 +876,27 @@ function CollectionPage() {
                                         e.target.value as "all" | "disabled" | "enabled",
                                     )
                                 }
-                                className="px-3 py-1 bg-background-tertiary border border-border rounded-lg focus:border-sakura-500 outline-none text-sm"
                             >
-                                <option value="all">All</option>
-                                <option value="disabled">Disabled Only</option>
-                                <option value="enabled">Enabled Only</option>
-                            </select>
+                                <NativeSelectOption value="all">All</NativeSelectOption>
+                                <NativeSelectOption value="disabled">Disabled Only</NativeSelectOption>
+                                <NativeSelectOption value="enabled">Enabled Only</NativeSelectOption>
+                            </NativeSelect>
                         </div>
                         {(minKeys !== "" ||
                             minKakera !== "" ||
                             disabledFilter !== "all") && (
-                            <button
-                                type="button"
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => {
                                     setMinKeys("");
                                     setMinKakera("");
                                     setDisabledFilter("all");
                                 }}
-                                className="text-sm text-torii-400 hover:text-torii-300 transition-colors"
+                                className="text-destructive hover:text-destructive"
                             >
                                 Clear Filters
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -924,18 +904,14 @@ function CollectionPage() {
 
             {!data?.items.length ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <FolderOpen size={48} className="text-foreground-subtle mb-4"/>
+                    <FolderOpen size={48} className="text-muted-foreground/70 mb-4"/>
                     <h2 className="text-xl font-semibold mb-2">No characters yet</h2>
-                    <p className="text-foreground-muted mb-4">
+                    <p className="text-muted-foreground mb-4">
                         Import your collection from Mudae to get started
                     </p>
-                    <button
-                        type="button"
-                        onClick={() => setShowImport(true)}
-                        className="px-4 py-2 bg-sakura-500 text-background rounded-lg hover:bg-sakura-300 transition-colors"
-                    >
+                    <Button onClick={() => setShowImport(true)}>
                         Import Collection
-                    </button>
+                    </Button>
                 </div>
             ) : (
                 <>
@@ -952,25 +928,23 @@ function CollectionPage() {
 
                     {data.totalPages > 1 && (
                         <div className="flex items-center justify-center gap-2 mt-8">
-                            <button
-                                type="button"
+                            <Button
+                                variant="outline"
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                                 disabled={page === 1}
-                                className="px-4 py-2 bg-background-tertiary rounded-lg disabled:opacity-50 hover:bg-background-secondary transition-colors"
                             >
                                 Previous
-                            </button>
-                            <span className="text-foreground-muted">
-								Page {page} of {data.totalPages}
-							</span>
-                            <button
-                                type="button"
+                            </Button>
+                            <span className="text-muted-foreground">
+                                Page {page} of {data.totalPages}
+                            </span>
+                            <Button
+                                variant="outline"
                                 onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                                 disabled={page === data.totalPages}
-                                className="px-4 py-2 bg-background-tertiary rounded-lg disabled:opacity-50 hover:bg-background-secondary transition-colors"
                             >
                                 Next
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </>

@@ -39,6 +39,53 @@ import {
 	YAxis,
 } from "recharts";
 import { KakeraClaimModal } from "@/components/kakera/KakeraClaimModal";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	NativeSelect,
+	NativeSelectOption,
+} from "@/components/ui/native-select";
+import { Spinner } from "@/components/ui/spinner";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { kakeraApi } from "@/lib/api";
 import { KAKERA_COLORS } from "@/lib/constants";
@@ -54,6 +101,23 @@ import type {
 export const Route = createFileRoute("/statistics")({
 	component: StatisticsPage,
 });
+
+// Chart colors derived from design tokens
+const CHART_COLORS = {
+	sakura: "var(--primary)",
+	info: "var(--color-info)",
+	purple: "var(--chart-3)",
+	cyan: "var(--color-info)",
+} as const;
+
+const CHART_TOOLTIP_STYLE = {
+	backgroundColor: "var(--popover)",
+	border: "1px solid var(--border)",
+	borderRadius: "var(--radius-lg)",
+} as const;
+
+const CHART_GRID_STROKE = "var(--border)";
+const CHART_AXIS_STROKE = "var(--muted-foreground)";
 
 type TimeRange = "week" | "month" | "3months" | "year" | "all";
 
@@ -230,7 +294,7 @@ function StatisticsPage() {
 	if (claimsLoading || statsLoading) {
 		return (
 			<div className="flex items-center justify-center min-h-[60vh]">
-				<div className="animate-spin w-8 h-8 border-2 border-sakura-500 border-t-transparent rounded-full" />
+				<Spinner className="size-8" />
 			</div>
 		);
 	}
@@ -238,7 +302,7 @@ function StatisticsPage() {
 	if (!claims || !stats) {
 		return (
 			<div className="text-center py-12">
-				<p className="text-foreground-muted">No kakera data found.</p>
+				<p className="text-muted-foreground">No kakera data found.</p>
 			</div>
 		);
 	}
@@ -286,7 +350,7 @@ function StatisticsPage() {
 
 	const getKakeraColor = (type: string | number) => {
 		const typeStr = String(type).toLowerCase();
-		return KAKERA_COLORS[typeStr as KakeraType] || "#ffffff";
+		return KAKERA_COLORS[typeStr as KakeraType] || "var(--foreground)";
 	};
 
 	const pieData = Object.entries(
@@ -572,1159 +636,1170 @@ function StatisticsPage() {
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 				<div>
 					<h1 className="text-2xl font-bold">Kakera Statistics</h1>
-					<p className="text-foreground-muted text-sm mt-1">
+					<p className="text-muted-foreground text-sm mt-1">
 						Insights and trends for your kakera claims
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2">
-					<button
-						type="button"
-						onClick={handleExport}
-						className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors"
-					>
+					<Button variant="secondary" className="h-9 px-4 text-sm" onClick={handleExport}>
 						<Download size={18} />
 						Export
-					</button>
-					<label className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors cursor-pointer">
-						<Upload size={18} />
-						Import
-						<input
-							type="file"
-							accept=".json"
-							onChange={handleImportFile}
-							className="hidden"
-						/>
-					</label>
-					<button
-						type="button"
+					</Button>
+					<Button variant="secondary" className="h-9 px-4 text-sm" asChild>
+						<label className="cursor-pointer">
+							<Upload size={18} />
+							Import
+							<input
+								type="file"
+								accept=".json"
+								onChange={handleImportFile}
+								className="hidden"
+							/>
+						</label>
+					</Button>
+					<Button
+						variant="secondary"
+						className="h-9 px-4 text-sm"
 						onClick={() => setShowBulkImportModal(true)}
-						className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-foreground font-semibold rounded-lg hover:bg-background-secondary transition-colors"
 					>
 						<FileText size={18} />
 						Bulk Import
-					</button>
-					<button
-						type="button"
+					</Button>
+					<Button
+						variant="destructive"
+						className="h-9 px-4 text-sm"
 						onClick={() => setShowWipeConfirm(true)}
-						className="flex items-center gap-2 px-4 py-2 bg-background-tertiary text-torii-400 font-semibold rounded-lg hover:bg-torii-500/20 transition-colors"
 					>
 						<Trash size={18} />
 						Wipe
-					</button>
-					<button
-						type="button"
+					</Button>
+					<Button
+						className="h-9 px-4 text-sm"
 						onClick={() => setShowAddModal(true)}
-						className="flex items-center gap-2 px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors"
 					>
 						<Plus size={18} />
 						Log Claim
-					</button>
+					</Button>
 				</div>
 			</div>
 
+			{/* Time Range Selector */}
 			<div className="flex flex-wrap gap-2">
 				{(Object.keys(TIME_RANGE_CONFIG) as TimeRange[]).map((range) => (
-					<button
+					<Button
 						key={range}
-						type="button"
+						variant={timeRange === range ? "default" : "secondary"}
+						size="sm"
 						onClick={() => setTimeRange(range)}
-						className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-							timeRange === range
-								? "bg-sakura-500 text-white"
-								: "bg-background-tertiary text-foreground-muted hover:text-foreground hover:bg-background-secondary"
-						}`}
 					>
 						{TIME_RANGE_CONFIG[range].label}
-					</button>
+					</Button>
 				))}
 			</div>
 
+			{/* KPI Cards */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<TrendUp size={20} className="text-sakura-500" />
-						<span className="text-foreground-muted text-sm">Total Kakera</span>
-					</div>
-					<p className="text-3xl font-bold text-sakura-500">
-						{stats.totalValue.toLocaleString()}
-					</p>
-				</div>
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<ChartBar size={20} className="text-blue-400" />
-						<span className="text-foreground-muted text-sm">Total Claims</span>
-					</div>
-					<p className="text-3xl font-bold text-blue-400">
-						{stats.totalCount.toLocaleString()}
-					</p>
-				</div>
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<ListNumbers size={20} className="text-green-400" />
-						<span className="text-foreground-muted text-sm">
-							Avg. per Claim
-						</span>
-					</div>
-					<p className="text-3xl font-bold text-green-400">
-						{Math.round(avgPerClaim).toLocaleString()}
-					</p>
-				</div>
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<Target size={20} className="text-sakura-300" />
-						<span className="text-foreground-muted text-sm">Best Claim</span>
-					</div>
-					<p className="text-3xl font-bold text-sakura-300">
-						{Math.max(...claims.map((c) => c.value), 0).toLocaleString()}
-					</p>
-				</div>
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<Calendar size={20} className="text-indigo-400" />
-						<span className="text-foreground-muted text-sm">Last 7 Days</span>
-					</div>
-					<p className="text-3xl font-bold text-indigo-400">
-						{last7DaysTotal.toLocaleString()}
-					</p>
-				</div>
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<TrendUp size={20} className="text-emerald-400" />
-						<span className="text-foreground-muted text-sm">Daily Average</span>
-					</div>
-					<p className="text-3xl font-bold text-emerald-400">
-						{Math.round(dailyAvg).toLocaleString()}
-					</p>
-				</div>
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<ChartBar size={20} className="text-amber-400" />
-						<span className="text-foreground-muted text-sm">Monthly Est.</span>
-					</div>
-					<p className="text-3xl font-bold text-amber-400">
-						{Math.round(dailyAvg * 30).toLocaleString()}
-					</p>
-				</div>
-				<div className="glass rounded-xl p-6 lantern-top">
-					<div className="flex items-center gap-3 mb-2">
-						<Clock size={20} className="text-rose-400" />
-						<span className="text-foreground-muted text-sm">Success Rate</span>
-					</div>
-					<p className="text-3xl font-bold text-rose-400">
-						{claims.length > 0
-							? `${Math.round((claims.filter((c) => c.isClaimed).length / claims.length) * 100)}%`
-							: "0%"}
-					</p>
-				</div>
+				<Card className="glass lantern-top">
+					<CardContent className="pt-6">
+						<div className="flex items-center gap-3 mb-2">
+							<TrendUp size={20} className="text-primary" />
+							<span className="text-muted-foreground text-sm">Total Kakera</span>
+						</div>
+						<p className="text-3xl font-bold text-primary">
+							{stats.totalValue.toLocaleString()}
+						</p>
+					</CardContent>
+				</Card>
+				<Card className="glass lantern-top">
+					<CardContent className="pt-6">
+						<div className="flex items-center gap-3 mb-2">
+							<ChartBar size={20} className="text-info" />
+							<span className="text-muted-foreground text-sm">Total Claims</span>
+						</div>
+						<p className="text-3xl font-bold text-info">
+							{stats.totalCount.toLocaleString()}
+						</p>
+					</CardContent>
+				</Card>
+				<Card className="glass lantern-top">
+					<CardContent className="pt-6">
+						<div className="flex items-center gap-3 mb-2">
+							<ListNumbers size={20} className="text-success" />
+							<span className="text-muted-foreground text-sm">
+								Avg. per Claim
+							</span>
+						</div>
+						<p className="text-3xl font-bold text-success">
+							{Math.round(avgPerClaim).toLocaleString()}
+						</p>
+					</CardContent>
+				</Card>
+				<Card className="glass lantern-top">
+					<CardContent className="pt-6">
+						<div className="flex items-center gap-3 mb-2">
+							<Target size={20} className="text-primary" />
+							<span className="text-muted-foreground text-sm">Best Claim</span>
+						</div>
+						<p className="text-3xl font-bold text-primary">
+							{Math.max(...claims.map((c) => c.value), 0).toLocaleString()}
+						</p>
+					</CardContent>
+				</Card>
+				<Card className="glass lantern-top">
+					<CardContent className="pt-6">
+						<div className="flex items-center gap-3 mb-2">
+							<Calendar size={20} className="text-chart-2" />
+							<span className="text-muted-foreground text-sm">Last 7 Days</span>
+						</div>
+						<p className="text-3xl font-bold text-chart-2">
+							{last7DaysTotal.toLocaleString()}
+						</p>
+					</CardContent>
+				</Card>
+				<Card className="glass lantern-top">
+					<CardContent className="pt-6">
+						<div className="flex items-center gap-3 mb-2">
+							<TrendUp size={20} className="text-success" />
+							<span className="text-muted-foreground text-sm">Daily Average</span>
+						</div>
+						<p className="text-3xl font-bold text-success">
+							{Math.round(dailyAvg).toLocaleString()}
+						</p>
+					</CardContent>
+				</Card>
+				<Card className="glass lantern-top">
+					<CardContent className="pt-6">
+						<div className="flex items-center gap-3 mb-2">
+							<ChartBar size={20} className="text-warning" />
+							<span className="text-muted-foreground text-sm">Monthly Est.</span>
+						</div>
+						<p className="text-3xl font-bold text-warning">
+							{Math.round(dailyAvg * 30).toLocaleString()}
+						</p>
+					</CardContent>
+				</Card>
+				<Card className="glass lantern-top">
+					<CardContent className="pt-6">
+						<div className="flex items-center gap-3 mb-2">
+							<Clock size={20} className="text-destructive" />
+							<span className="text-muted-foreground text-sm">Success Rate</span>
+						</div>
+						<p className="text-3xl font-bold text-destructive">
+							{claims.length > 0
+								? `${Math.round((claims.filter((c) => c.isClaimed).length / claims.length) * 100)}%`
+								: "0%"}
+						</p>
+					</CardContent>
+				</Card>
 			</div>
 
+			{/* Charts Grid */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				<div className="glass rounded-xl p-6">
-					<h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-						<ChartBar size={20} /> Daily Kakera Gain ({config.label})
-					</h2>
-					<div className="h-[300px] w-full">
-						<ResponsiveContainer width="100%" height="100%">
-							<AreaChart data={dailyData}>
-								<defs>
-									<linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-										<stop offset="5%" stopColor="#f2b5d4" stopOpacity={0.3} />
-										<stop offset="95%" stopColor="#f2b5d4" stopOpacity={0} />
-									</linearGradient>
-								</defs>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									stroke="rgba(255,255,255,0.05)"
-								/>
-								<XAxis
-									dataKey="date"
-									stroke="rgba(255,255,255,0.5)"
-									fontSize={12}
-									tickLine={false}
-									axisLine={false}
-								/>
-								<YAxis
-									stroke="rgba(255,255,255,0.5)"
-									fontSize={12}
-									tickLine={false}
-									axisLine={false}
-									tickFormatter={(value) => `${value}`}
-								/>
-								<Tooltip
-									contentStyle={{
-										backgroundColor: "rgba(26, 26, 46, 0.9)",
-										border: "1px solid rgba(242, 181, 212, 0.2)",
-										borderRadius: "8px",
-									}}
-								/>
-								<Area
-									type="monotone"
-									dataKey="value"
-									stroke="#f2b5d4"
-									fillOpacity={1}
-									fill="url(#colorValue)"
-									name="Kakera"
-								/>
-							</AreaChart>
-						</ResponsiveContainer>
-					</div>
-				</div>
-
-				<div className="glass rounded-xl p-6">
-					<div className="flex items-center justify-between mb-6">
-						<h2 className="text-lg font-semibold flex items-center gap-2">
-							<ChartPie size={20} /> Distribution by Type ({config.label})
-						</h2>
-						<div className="flex gap-1 bg-background-tertiary rounded-lg p-1">
-							<button
-								type="button"
-								onClick={() => setPieChartMode("value")}
-								className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-									pieChartMode === "value"
-										? "bg-sakura-500 text-white"
-										: "text-foreground-muted hover:text-foreground"
-								}`}
-							>
-								By Value
-							</button>
-							<button
-								type="button"
-								onClick={() => setPieChartMode("count")}
-								className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-									pieChartMode === "count"
-										? "bg-sakura-500 text-white"
-										: "text-foreground-muted hover:text-foreground"
-								}`}
-							>
-								By Count
-							</button>
+				{/* Daily Kakera Gain */}
+				<Card className="glass">
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<ChartBar size={20} /> Daily Kakera Gain ({config.label})
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="h-[300px] w-full">
+							<ResponsiveContainer width="100%" height="100%">
+								<AreaChart data={dailyData}>
+									<defs>
+										<linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+											<stop offset="5%" stopColor={CHART_COLORS.sakura} stopOpacity={0.3} />
+											<stop offset="95%" stopColor={CHART_COLORS.sakura} stopOpacity={0} />
+										</linearGradient>
+									</defs>
+									<CartesianGrid
+										strokeDasharray="3 3"
+										stroke={CHART_GRID_STROKE}
+									/>
+									<XAxis
+										dataKey="date"
+										stroke={CHART_AXIS_STROKE}
+										fontSize={12}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<YAxis
+										stroke={CHART_AXIS_STROKE}
+										fontSize={12}
+										tickLine={false}
+										axisLine={false}
+										tickFormatter={(value) => `${value}`}
+									/>
+									<Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+									<Area
+										type="monotone"
+										dataKey="value"
+										stroke={CHART_COLORS.sakura}
+										fillOpacity={1}
+										fill="url(#colorValue)"
+										name="Kakera"
+									/>
+								</AreaChart>
+							</ResponsiveContainer>
 						</div>
-					</div>
-					<div className="h-[300px] w-full">
-						<ResponsiveContainer width="100%" height="100%">
-							<PieChart>
-								<Pie
-									data={pieData}
-									cx="50%"
-									cy="50%"
-									innerRadius={60}
-									outerRadius={100}
-									paddingAngle={5}
-									dataKey={pieChartMode === "value" ? "value" : "count"}
+					</CardContent>
+				</Card>
+
+				{/* Distribution by Type */}
+				<Card className="glass">
+					<CardHeader>
+						<div className="flex items-center justify-between w-full">
+							<CardTitle className="flex items-center gap-2">
+								<ChartPie size={20} /> Distribution by Type ({config.label})
+							</CardTitle>
+							<div className="flex gap-1 bg-muted rounded-lg p-1">
+								<Button
+									variant={pieChartMode === "value" ? "default" : "ghost"}
+									size="sm"
+									onClick={() => setPieChartMode("value")}
 								>
-									{pieData.map((entry) => (
-										<Cell key={entry.type} fill={getKakeraColor(entry.type)} />
-									))}
-								</Pie>
-								<Tooltip
-									contentStyle={{
-										backgroundColor: "rgba(26, 26, 46, 0.9)",
-										border: "1px solid rgba(242, 181, 212, 0.2)",
-										borderRadius: "8px",
-									}}
-									formatter={(value, _name, props) => [
-										pieChartMode === "value"
-											? Number(value).toLocaleString()
-											: value,
-										props.payload.name,
-									]}
-								/>
-							</PieChart>
-						</ResponsiveContainer>
-					</div>
-					<div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
-						{pieData.map((entry) => (
-							<div key={entry.name} className="flex items-center gap-2 text-xs">
-								<div
-									className="w-3 h-3 rounded-full"
-									style={{
-										backgroundColor: getKakeraColor(entry.type),
-									}}
-								/>
-								<span className="text-foreground-muted truncate">
-									{entry.name}
-								</span>
+									By Value
+								</Button>
+								<Button
+									variant={pieChartMode === "count" ? "default" : "ghost"}
+									size="sm"
+									onClick={() => setPieChartMode("count")}
+								>
+									By Count
+								</Button>
 							</div>
-						))}
-					</div>
-				</div>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className="h-[300px] w-full">
+							<ResponsiveContainer width="100%" height="100%">
+								<PieChart>
+									<Pie
+										data={pieData}
+										cx="50%"
+										cy="50%"
+										innerRadius={60}
+										outerRadius={100}
+										paddingAngle={5}
+										dataKey={pieChartMode === "value" ? "value" : "count"}
+									>
+										{pieData.map((entry) => (
+											<Cell key={entry.type} fill={getKakeraColor(entry.type)} />
+										))}
+									</Pie>
+									<Tooltip
+										contentStyle={CHART_TOOLTIP_STYLE}
+										formatter={(value, _name, props) => [
+											pieChartMode === "value"
+												? Number(value).toLocaleString()
+												: value,
+											props.payload.name,
+										]}
+									/>
+								</PieChart>
+							</ResponsiveContainer>
+						</div>
+						<div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+							{pieData.map((entry) => (
+								<div key={entry.name} className="flex items-center gap-2 text-xs">
+									<div
+										className="w-3 h-3 rounded-full"
+										style={{
+											backgroundColor: getKakeraColor(entry.type),
+										}}
+									/>
+									<span className="text-muted-foreground truncate">
+										{entry.name}
+									</span>
+								</div>
+							))}
+						</div>
+					</CardContent>
+				</Card>
 
-				<div className="glass rounded-xl p-6">
-					<h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-						<ChartBar size={20} /> Claims per Day ({config.label})
-					</h2>
-					<div className="h-[300px] w-full">
-						<ResponsiveContainer width="100%" height="100%">
-							<BarChart data={dailyData}>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									stroke="rgba(255,255,255,0.05)"
-								/>
-								<XAxis
-									dataKey="date"
-									stroke="rgba(255,255,255,0.5)"
-									fontSize={10}
-									tickLine={false}
-									axisLine={false}
-								/>
-								<YAxis
-									stroke="rgba(255,255,255,0.5)"
-									fontSize={12}
-									tickLine={false}
-									axisLine={false}
-								/>
-								<Tooltip
-									contentStyle={{
-										backgroundColor: "rgba(26, 26, 46, 0.9)",
-										border: "1px solid rgba(242, 181, 212, 0.2)",
-										borderRadius: "8px",
-									}}
-								/>
-								<Bar
-									dataKey="count"
-									fill="#f2b5d4"
-									radius={[4, 4, 0, 0]}
-									name="Claims"
-								/>
-							</BarChart>
-						</ResponsiveContainer>
-					</div>
-				</div>
+				{/* Claims per Day */}
+				<Card className="glass">
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<ChartBar size={20} /> Claims per Day ({config.label})
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="h-[300px] w-full">
+							<ResponsiveContainer width="100%" height="100%">
+								<BarChart data={dailyData}>
+									<CartesianGrid
+										strokeDasharray="3 3"
+										stroke={CHART_GRID_STROKE}
+									/>
+									<XAxis
+										dataKey="date"
+										stroke={CHART_AXIS_STROKE}
+										fontSize={10}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<YAxis
+										stroke={CHART_AXIS_STROKE}
+										fontSize={12}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+									<Bar
+										dataKey="count"
+										fill={CHART_COLORS.sakura}
+										radius={[4, 4, 0, 0]}
+										name="Claims"
+									/>
+								</BarChart>
+							</ResponsiveContainer>
+						</div>
+					</CardContent>
+				</Card>
 
-				<div className="glass rounded-xl p-6">
-					<h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-						<Calendar size={20} /> Claims by Day of Week ({config.label})
-					</h2>
-					<div className="h-[300px] w-full">
-						<ResponsiveContainer width="100%" height="100%">
-							<BarChart data={dowData}>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									stroke="rgba(255,255,255,0.05)"
-								/>
-								<XAxis
-									dataKey="name"
-									stroke="rgba(255,255,255,0.5)"
-									fontSize={12}
-									tickLine={false}
-									axisLine={false}
-								/>
-								<YAxis
-									stroke="rgba(255,255,255,0.5)"
-									fontSize={12}
-									tickLine={false}
-									axisLine={false}
-								/>
-								<Tooltip
-									contentStyle={{
-										backgroundColor: "rgba(26, 26, 46, 0.9)",
-										border: "1px solid rgba(242, 181, 212, 0.2)",
-										borderRadius: "8px",
-									}}
-								/>
-								<Bar
-									dataKey="count"
-									fill="#3b82f6"
-									radius={[4, 4, 0, 0]}
-									name="Claims"
-								/>
-							</BarChart>
-						</ResponsiveContainer>
-					</div>
-				</div>
+				{/* Claims by Day of Week */}
+				<Card className="glass">
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<Calendar size={20} /> Claims by Day of Week ({config.label})
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="h-[300px] w-full">
+							<ResponsiveContainer width="100%" height="100%">
+								<BarChart data={dowData}>
+									<CartesianGrid
+										strokeDasharray="3 3"
+										stroke={CHART_GRID_STROKE}
+									/>
+									<XAxis
+										dataKey="name"
+										stroke={CHART_AXIS_STROKE}
+										fontSize={12}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<YAxis
+										stroke={CHART_AXIS_STROKE}
+										fontSize={12}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+									<Bar
+										dataKey="count"
+										fill={CHART_COLORS.info}
+										radius={[4, 4, 0, 0]}
+										name="Claims"
+									/>
+								</BarChart>
+							</ResponsiveContainer>
+						</div>
+					</CardContent>
+				</Card>
 
-				<div className="glass rounded-xl p-6 lg:col-span-2">
-					<h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-						<TrendUp size={20} /> Cumulative Growth ({config.label})
-					</h2>
-					<div className="h-[300px] w-full">
-						<ResponsiveContainer width="100%" height="100%">
-							<LineChart data={cumulativeData}>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									stroke="rgba(255,255,255,0.05)"
-								/>
-								<XAxis
-									dataKey="date"
-									stroke="rgba(255,255,255,0.5)"
-									fontSize={12}
-									tickLine={false}
-									axisLine={false}
-								/>
-								<YAxis
-									stroke="rgba(255,255,255,0.5)"
-									fontSize={12}
-									tickLine={false}
-									axisLine={false}
-								/>
-								<Tooltip
-									contentStyle={{
-										backgroundColor: "rgba(26, 26, 46, 0.9)",
-										border: "1px solid rgba(242, 181, 212, 0.2)",
-										borderRadius: "8px",
-									}}
-								/>
-								<Line
-									type="monotone"
-									dataKey="cumulativeValue"
-									stroke="#f2b5d4"
-									strokeWidth={3}
-									dot={false}
-									name="Total Kakera"
-								/>
-							</LineChart>
-						</ResponsiveContainer>
-					</div>
-				</div>
+				{/* Cumulative Growth */}
+				<Card className="glass lg:col-span-2">
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<TrendUp size={20} /> Cumulative Growth ({config.label})
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="h-[300px] w-full">
+							<ResponsiveContainer width="100%" height="100%">
+								<LineChart data={cumulativeData}>
+									<CartesianGrid
+										strokeDasharray="3 3"
+										stroke={CHART_GRID_STROKE}
+									/>
+									<XAxis
+										dataKey="date"
+										stroke={CHART_AXIS_STROKE}
+										fontSize={12}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<YAxis
+										stroke={CHART_AXIS_STROKE}
+										fontSize={12}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+									<Line
+										type="monotone"
+										dataKey="cumulativeValue"
+										stroke={CHART_COLORS.sakura}
+										strokeWidth={3}
+										dot={false}
+										name="Total Kakera"
+									/>
+								</LineChart>
+							</ResponsiveContainer>
+						</div>
+					</CardContent>
+				</Card>
 			</div>
 
-			<div className="glass rounded-xl overflow-hidden">
-				<button
-					type="button"
-					onClick={() => setShowAdvancedStats(!showAdvancedStats)}
-					className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors"
-				>
-					<h2 className="text-lg font-semibold flex items-center gap-2">
-						<Gauge size={20} className="text-purple-400" />
-						Advanced Statistics
-					</h2>
-					<div className="flex items-center gap-2 text-foreground-muted">
-						<span className="text-sm">
-							Rolling averages, projections & more
-						</span>
-						{showAdvancedStats ? (
-							<CaretUp size={20} />
-						) : (
-							<CaretDown size={20} />
-						)}
-					</div>
-				</button>
+			{/* Advanced Statistics Collapsible */}
+			<Card className="glass overflow-hidden">
+				<Collapsible open={showAdvancedStats} onOpenChange={setShowAdvancedStats}>
+					<CollapsibleTrigger asChild>
+						<button
+							type="button"
+							className="w-full p-6 flex items-center justify-between hover:bg-muted/50 transition-colors"
+						>
+							<h2 className="text-lg font-semibold flex items-center gap-2">
+								<Gauge size={20} className="text-chart-3" />
+								Advanced Statistics
+							</h2>
+							<div className="flex items-center gap-2 text-muted-foreground">
+								<span className="text-sm">
+									Rolling averages, projections & more
+								</span>
+								{showAdvancedStats ? (
+									<CaretUp size={20} />
+								) : (
+									<CaretDown size={20} />
+								)}
+							</div>
+						</button>
+					</CollapsibleTrigger>
 
-				{showAdvancedStats && (
-					<div className="p-6 pt-0 space-y-8 border-t border-border">
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									Rolling 7-Day Avg
-								</div>
-								<p className="text-2xl font-bold text-purple-400">
-									{recentRollingAvg.toLocaleString()}
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									Recent smoothed daily average
-								</p>
-							</div>
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									Median Daily
-								</div>
-								<p className="text-2xl font-bold text-cyan-400">
-									{Math.round(medianDaily).toLocaleString()}
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									More robust than average
-								</p>
-							</div>
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									Std Deviation
-								</div>
-								<p className="text-2xl font-bold text-orange-400">
-									{Math.round(stdDev).toLocaleString()}
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									Income volatility measure
-								</p>
-							</div>
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									Consistency
-								</div>
-								<p className="text-2xl font-bold text-teal-400">
-									{consistencyScore.toFixed(1)}%
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									{activeDaysCount} of {dailyData.length} days active
-								</p>
-							</div>
-						</div>
-
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									Momentum
-								</div>
-								<p
-									className={`text-2xl font-bold flex items-center gap-2 ${momentum >= 0 ? "text-green-400" : "text-red-400"}`}
-								>
-									{momentum >= 0 ? (
-										<TrendUp size={20} />
-									) : (
-										<TrendDown size={20} />
-									)}
-									{Math.abs(momentum).toFixed(1)}%
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									Recent vs historical performance
-								</p>
-							</div>
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									Volatility (CV)
-								</div>
-								<p className="text-2xl font-bold text-yellow-400">
-									{coefficientOfVariation.toFixed(1)}%
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									Coefficient of variation
-								</p>
-							</div>
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									Longest Streak
-								</div>
-								<p className="text-2xl font-bold text-pink-400">
-									{maxStreak} days
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									Consecutive days with claims
-								</p>
-							</div>
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									Best/Worst Day
-								</div>
-								<p className="text-lg font-bold">
-									<span className="text-green-400">
-										{bestDay.toLocaleString()}
-									</span>
-									<span className="text-foreground-muted mx-2">/</span>
-									<span className="text-red-400">
-										{worstDay.toLocaleString()}
-									</span>
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									Highest and lowest daily income
-								</p>
-							</div>
-						</div>
-
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									25th Percentile
-								</div>
-								<p className="text-2xl font-bold text-blue-300">
-									{percentile25.toLocaleString()}
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									25% of days are below this
-								</p>
-							</div>
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									50th Percentile (Median)
-								</div>
-								<p className="text-2xl font-bold text-blue-400">
-									{Math.round(medianDaily).toLocaleString()}
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									Half of days are below this
-								</p>
-							</div>
-							<div className="bg-background-tertiary/50 rounded-lg p-4">
-								<div className="text-foreground-muted text-sm mb-1">
-									75th Percentile
-								</div>
-								<p className="text-2xl font-bold text-blue-500">
-									{percentile75.toLocaleString()}
-								</p>
-								<p className="text-xs text-foreground-muted mt-1">
-									75% of days are below this
-								</p>
-							</div>
-						</div>
-
-						<div className="bg-background-tertiary/30 rounded-xl p-6">
-							<h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-								<Target size={20} className="text-sakura-400" />
-								Threshold Calculator
-							</h3>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								<div>
-									<label
-										htmlFor="threshold-target"
-										className="block text-sm font-medium mb-2"
-									>
-										Target Kakera Amount
-									</label>
-									<input
-										id="threshold-target"
-										type="number"
-										value={thresholdTarget}
-										onChange={(e) => setThresholdTarget(e.target.value)}
-										className="w-full px-4 py-2 bg-background-tertiary rounded-lg border border-border focus:border-sakura-500 focus:outline-none"
-										placeholder="e.g., 100000"
-									/>
-									<p className="text-xs text-foreground-muted mt-2">
-										Target:{" "}
-										<span className="text-sakura-400 font-semibold">
-											{remaining.toLocaleString()}
-										</span>{" "}
-										kakera
+					<CollapsibleContent>
+						<div className="p-6 pt-0 space-y-8 border-t border-border">
+							{/* Row 1: Rolling Avg, Median, Std Dev, Consistency */}
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										Rolling 7-Day Avg
+									</div>
+									<p className="text-2xl font-bold text-chart-3">
+										{recentRollingAvg.toLocaleString()}
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										Recent smoothed daily average
 									</p>
 								</div>
-								<div className="space-y-3">
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-foreground-muted">
-											Using daily avg:
-										</span>
-										<span className="font-semibold text-emerald-400">
-											{daysToTargetDailyAvg === Infinity
-												? "∞"
-												: `${daysToTargetDailyAvg} days`}
-										</span>
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										Median Daily
 									</div>
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-foreground-muted">
-											Using median:
-										</span>
-										<span className="font-semibold text-cyan-400">
-											{daysToTargetMedian === Infinity
-												? "∞"
-												: `${daysToTargetMedian} days`}
-										</span>
+									<p className="text-2xl font-bold text-info">
+										{Math.round(medianDaily).toLocaleString()}
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										More robust than average
+									</p>
+								</div>
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										Std Deviation
 									</div>
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-foreground-muted">
-											Using last 7 days:
-										</span>
-										<span className="font-semibold text-indigo-400">
-											{daysToTargetLast7 === Infinity
-												? "∞"
-												: `${daysToTargetLast7} days`}
-										</span>
+									<p className="text-2xl font-bold text-warning">
+										{Math.round(stdDev).toLocaleString()}
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										Income volatility measure
+									</p>
+								</div>
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										Consistency
 									</div>
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-foreground-muted">
-											Using recent trend:
-										</span>
-										<span
-											className={`font-semibold ${momentum >= 0 ? "text-green-400" : "text-red-400"}`}
-										>
-											{daysToTargetTrend === Infinity
-												? "∞"
-												: `${daysToTargetTrend} days`}
-										</span>
-									</div>
+									<p className="text-2xl font-bold text-chart-4">
+										{consistencyScore.toFixed(1)}%
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										{activeDaysCount} of {dailyData.length} days active
+									</p>
 								</div>
 							</div>
-						</div>
 
-						<div className="glass rounded-xl p-6">
-							<h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-								<ChartBar size={20} className="text-purple-400" />
-								7-Day Rolling Average Trend
-							</h3>
-							<div className="h-[250px] w-full">
-								<ResponsiveContainer width="100%" height="100%">
-									<LineChart data={rolling7DayData}>
-										<CartesianGrid
-											strokeDasharray="3 3"
-											stroke="rgba(255,255,255,0.05)"
-										/>
-										<XAxis
-											dataKey="date"
-											stroke="rgba(255,255,255,0.5)"
-											fontSize={10}
-											tickLine={false}
-											axisLine={false}
-										/>
-										<YAxis
-											stroke="rgba(255,255,255,0.5)"
-											fontSize={12}
-											tickLine={false}
-											axisLine={false}
-										/>
-										<Tooltip
-											contentStyle={{
-												backgroundColor: "rgba(26, 26, 46, 0.9)",
-												border: "1px solid rgba(242, 181, 212, 0.2)",
-												borderRadius: "8px",
-											}}
-										/>
-										<Line
-											type="monotone"
-											dataKey="rollingAvg"
-											stroke="#a855f7"
-											strokeWidth={2}
-											dot={false}
-											name="7-Day Rolling Avg"
-										/>
-									</LineChart>
-								</ResponsiveContainer>
-							</div>
-						</div>
-
-						<div className="bg-background-tertiary/30 rounded-xl p-6">
-							<h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-								<TrendUp size={20} className="text-cyan-400" />
-								Linear Growth Model
-							</h3>
-							<p className="text-sm text-foreground-muted mb-4">
-								Uses linear regression on daily income to find your earnings
-								velocity (rate of growth), then projects future cumulative
-								totals by summing predicted daily incomes.
-							</p>
-
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-								<div className="flex items-end">
-									<button
-										type="button"
-										onClick={calculateLinearModel}
-										disabled={isCalculating || dailyData.length < 2}
-										className="w-full px-4 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+							{/* Row 2: Momentum, Volatility, Streak, Best/Worst */}
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										Momentum
+									</div>
+									<p
+										className={`text-2xl font-bold flex items-center gap-2 ${momentum >= 0 ? "text-success" : "text-destructive"}`}
 									>
-										{isCalculating ? (
-											<>
-												<div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-												Calculating...
-											</>
+										{momentum >= 0 ? (
+											<TrendUp size={20} />
 										) : (
-											"Calculate Model"
+											<TrendDown size={20} />
 										)}
-									</button>
+										{Math.abs(momentum).toFixed(1)}%
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										Recent vs historical performance
+									</p>
 								</div>
-								<div className="flex items-end">
-									{linearResult && (
-										<div className="text-sm space-y-1">
-											<div>
-												<span className="text-foreground-muted">R² = </span>
-												<span className="font-semibold text-green-400">
-													{(linearResult.rSquared * 100).toFixed(2)}%
-												</span>
-											</div>
-											<div>
-												<span className="text-foreground-muted">Slope = </span>
-												<span
-													className={`font-semibold ${linearResult.slope >= 0 ? "text-emerald-400" : "text-red-400"}`}
-												>
-													{linearResult.slope >= 0 ? "+" : ""}
-													{linearResult.slope.toFixed(2)} kakera/day²
-												</span>
-											</div>
-										</div>
-									)}
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										Volatility (CV)
+									</div>
+									<p className="text-2xl font-bold text-warning">
+										{coefficientOfVariation.toFixed(1)}%
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										Coefficient of variation
+									</p>
+								</div>
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										Longest Streak
+									</div>
+									<p className="text-2xl font-bold text-primary">
+										{maxStreak} days
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										Consecutive days with claims
+									</p>
+								</div>
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										Best/Worst Day
+									</div>
+									<p className="text-lg font-bold">
+										<span className="text-success">
+											{bestDay.toLocaleString()}
+										</span>
+										<span className="text-muted-foreground mx-2">/</span>
+										<span className="text-destructive">
+											{worstDay.toLocaleString()}
+										</span>
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										Highest and lowest daily income
+									</p>
 								</div>
 							</div>
 
-							{linearResult && (
-								<div className="space-y-4">
-									<div className="bg-background-secondary/50 rounded-lg p-4">
-										<h4 className="text-sm font-semibold mb-2 text-cyan-400">
-											Daily Income Model
-										</h4>
-										<p className="font-mono text-sm text-foreground">
-											daily_income = {linearResult.intercept.toFixed(2)} + (
-											{linearResult.slope.toFixed(2)} × day)
-										</p>
-										<p className="text-xs text-foreground-muted mt-2">
-											{linearResult.slope >= 0
-												? `Your daily income is growing by ~${linearResult.slope.toFixed(1)} kakera each day`
-												: `Your daily income is declining by ~${Math.abs(linearResult.slope).toFixed(1)} kakera each day`}
-										</p>
+							{/* Row 3: Percentiles */}
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										25th Percentile
 									</div>
+									<p className="text-2xl font-bold text-info/70">
+										{percentile25.toLocaleString()}
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										25% of days are below this
+									</p>
+								</div>
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										50th Percentile (Median)
+									</div>
+									<p className="text-2xl font-bold text-info">
+										{Math.round(medianDaily).toLocaleString()}
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										Half of days are below this
+									</p>
+								</div>
+								<div className="bg-muted/50 rounded-lg p-4">
+									<div className="text-muted-foreground text-sm mb-1">
+										75th Percentile
+									</div>
+									<p className="text-2xl font-bold text-info">
+										{percentile75.toLocaleString()}
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										75% of days are below this
+									</p>
+								</div>
+							</div>
 
+							{/* Threshold Calculator */}
+							<div className="bg-muted/30 rounded-xl p-6">
+								<h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+									<Target size={20} className="text-primary" />
+									Threshold Calculator
+								</h3>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 									<div>
-										<h4 className="text-sm font-semibold mb-3 text-foreground-muted">
-											Projected Cumulative Totals
-										</h4>
-										<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-											{linearResult.predictions.map((prediction) => {
-												const daysAhead =
-													prediction.day - linearResult.lastDayInData;
-												return (
-													<div
-														key={prediction.day}
-														className="bg-gradient-to-br from-cyan-900/30 to-purple-900/30 border border-cyan-500/20 rounded-lg p-3"
-													>
-														<div className="text-cyan-300 text-xs mb-1">
-															+{daysAhead} days
-														</div>
-														<div className="text-lg font-bold text-cyan-400">
-															{prediction.cumulative.toLocaleString()}
-														</div>
-														<div className="text-xs text-foreground-muted mt-1">
-															~{prediction.dailyIncome.toLocaleString()}/day
-														</div>
-													</div>
-												);
-											})}
-										</div>
+										<Label htmlFor="threshold-target" className="mb-2">
+											Target Kakera Amount
+										</Label>
+										<Input
+											id="threshold-target"
+											type="number"
+											value={thresholdTarget}
+											onChange={(e) => setThresholdTarget(e.target.value)}
+											className="h-9"
+											placeholder="e.g., 100000"
+										/>
+										<p className="text-xs text-muted-foreground mt-2">
+											Target:{" "}
+											<span className="text-primary font-semibold">
+												{remaining.toLocaleString()}
+											</span>{" "}
+											kakera
+										</p>
 									</div>
-
-									<div className="bg-background-secondary/30 rounded-lg p-4 text-sm">
-										<h4 className="font-semibold mb-2 text-amber-400">
-											How it works:
-										</h4>
-										<ol className="list-decimal list-inside space-y-1 text-foreground-muted">
-											<li>
-												Calculates daily income totals from your claim history
-											</li>
-											<li>
-												Fits a linear regression to find if your daily income is
-												trending up/down
-											</li>
-											<li>
-												Predicts future daily incomes using the fitted line
-											</li>
-											<li>
-												Sums predicted daily incomes to get cumulative
-												projections
-											</li>
-										</ol>
-									</div>
-
-									<div>
-										<h4 className="text-sm font-semibold mb-3 text-foreground-muted">
-											Cumulative Growth Projection
-										</h4>
-										<div className="h-[350px] w-full">
-											<ResponsiveContainer width="100%" height="100%">
-												<LineChart
-													data={[
-														...cumulativeData.map((d, i) => ({
-															day: i + 1,
-															actual: d.cumulativeValue,
-															predicted: null as number | null,
-															isFuture: false,
-														})),
-														...Array.from({ length: 90 }, (_, i) => {
-															const day = linearResult.lastDayInData + i + 1;
-															let cumulativeFuture = 0;
-															for (
-																let d = linearResult.lastDayInData + 1;
-																d <= day;
-																d++
-															) {
-																cumulativeFuture += Math.max(
-																	0,
-																	linearResult.slope * d +
-																		linearResult.intercept,
-																);
-															}
-															return {
-																day,
-																actual: null as number | null,
-																predicted:
-																	linearResult.currentBaseline +
-																	cumulativeFuture,
-																isFuture: true,
-															};
-														}),
-													]}
-												>
-													<CartesianGrid
-														strokeDasharray="3 3"
-														stroke="rgba(255,255,255,0.05)"
-													/>
-													<XAxis
-														dataKey="day"
-														stroke="rgba(255,255,255,0.5)"
-														fontSize={10}
-														tickLine={false}
-														axisLine={false}
-													/>
-													<YAxis
-														stroke="rgba(255,255,255,0.5)"
-														fontSize={12}
-														tickLine={false}
-														axisLine={false}
-														tickFormatter={(value) =>
-															`${(value / 1000).toFixed(0)}k`
-														}
-													/>
-													<Tooltip
-														contentStyle={{
-															backgroundColor: "rgba(26, 26, 46, 0.9)",
-															border: "1px solid rgba(242, 181, 212, 0.2)",
-															borderRadius: "8px",
-														}}
-														formatter={(
-															value: number | undefined,
-															_name,
-															props,
-														) => {
-															if (value === undefined) return "";
-															const isFuture = props.payload?.isFuture;
-															return (
-																<span
-																	className={isFuture ? "text-cyan-400" : ""}
-																>
-																	{value.toLocaleString()}
-																	{isFuture ? " (projected)" : ""}
-																</span>
-															);
-														}}
-													/>
-													<Line
-														type="monotone"
-														dataKey="actual"
-														stroke="#f2b5d4"
-														strokeWidth={2}
-														dot={false}
-														name="Actual"
-														connectNulls={false}
-													/>
-													<Line
-														type="monotone"
-														dataKey="predicted"
-														stroke="#22d3ee"
-														strokeWidth={2}
-														strokeDasharray="5 5"
-														dot={false}
-														name="Projected"
-													/>
-												</LineChart>
-											</ResponsiveContainer>
+									<div className="space-y-3">
+										<div className="flex items-center justify-between">
+											<span className="text-sm text-muted-foreground">
+												Using daily avg:
+											</span>
+											<span className="font-semibold text-success">
+												{daysToTargetDailyAvg === Infinity
+													? "\u221E"
+													: `${daysToTargetDailyAvg} days`}
+											</span>
 										</div>
-										<div className="flex items-center justify-center gap-6 text-sm mt-4">
-											<div className="flex items-center gap-2">
-												<div className="w-8 h-0.5 bg-[#f2b5d4]" />
-												<span className="text-foreground-muted">
-													Actual Data
-												</span>
-											</div>
-											<div className="flex items-center gap-2">
-												<div
-													className="w-8 h-0.5 bg-[#22d3ee]"
-													style={{ borderStyle: "dashed" }}
-												/>
-												<span className="text-foreground-muted">
-													Model Projection
-												</span>
-											</div>
+										<div className="flex items-center justify-between">
+											<span className="text-sm text-muted-foreground">
+												Using median:
+											</span>
+											<span className="font-semibold text-info">
+												{daysToTargetMedian === Infinity
+													? "\u221E"
+													: `${daysToTargetMedian} days`}
+											</span>
+										</div>
+										<div className="flex items-center justify-between">
+											<span className="text-sm text-muted-foreground">
+												Using last 7 days:
+											</span>
+											<span className="font-semibold text-chart-2">
+												{daysToTargetLast7 === Infinity
+													? "\u221E"
+													: `${daysToTargetLast7} days`}
+											</span>
+										</div>
+										<div className="flex items-center justify-between">
+											<span className="text-sm text-muted-foreground">
+												Using recent trend:
+											</span>
+											<span
+												className={`font-semibold ${momentum >= 0 ? "text-success" : "text-destructive"}`}
+											>
+												{daysToTargetTrend === Infinity
+													? "\u221E"
+													: `${daysToTargetTrend} days`}
+											</span>
 										</div>
 									</div>
 								</div>
-							)}
-						</div>
-					</div>
-				)}
-			</div>
+							</div>
 
-			<div className="glass rounded-xl overflow-hidden">
-				<div className="p-6 border-b border-border flex items-center justify-between">
-					<h2 className="text-lg font-semibold">Claims</h2>
+							{/* Rolling Average Chart */}
+							<Card className="glass">
+								<CardHeader>
+									<CardTitle className="flex items-center gap-2">
+										<ChartBar size={20} className="text-chart-3" />
+										7-Day Rolling Average Trend
+									</CardTitle>
+								</CardHeader>
+								<CardContent>
+									<div className="h-[250px] w-full">
+										<ResponsiveContainer width="100%" height="100%">
+											<LineChart data={rolling7DayData}>
+												<CartesianGrid
+													strokeDasharray="3 3"
+													stroke={CHART_GRID_STROKE}
+												/>
+												<XAxis
+													dataKey="date"
+													stroke={CHART_AXIS_STROKE}
+													fontSize={10}
+													tickLine={false}
+													axisLine={false}
+												/>
+												<YAxis
+													stroke={CHART_AXIS_STROKE}
+													fontSize={12}
+													tickLine={false}
+													axisLine={false}
+												/>
+												<Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+												<Line
+													type="monotone"
+													dataKey="rollingAvg"
+													stroke={CHART_COLORS.purple}
+													strokeWidth={2}
+													dot={false}
+													name="7-Day Rolling Avg"
+												/>
+											</LineChart>
+										</ResponsiveContainer>
+									</div>
+								</CardContent>
+							</Card>
+
+							{/* Linear Growth Model */}
+							<div className="bg-muted/30 rounded-xl p-6">
+								<h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+									<TrendUp size={20} className="text-info" />
+									Linear Growth Model
+								</h3>
+								<p className="text-sm text-muted-foreground mb-4">
+									Uses linear regression on daily income to find your earnings
+									velocity (rate of growth), then projects future cumulative
+									totals by summing predicted daily incomes.
+								</p>
+
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+									<div className="flex items-end">
+										<Button
+											onClick={calculateLinearModel}
+											disabled={isCalculating || dailyData.length < 2}
+											className="w-full"
+										>
+											{isCalculating ? (
+												<>
+													<Spinner className="size-4" />
+													Calculating...
+												</>
+											) : (
+												"Calculate Model"
+											)}
+										</Button>
+									</div>
+									<div className="flex items-end">
+										{linearResult && (
+											<div className="text-sm space-y-1">
+												<div>
+													<span className="text-muted-foreground">R² = </span>
+													<span className="font-semibold text-success">
+														{(linearResult.rSquared * 100).toFixed(2)}%
+													</span>
+												</div>
+												<div>
+													<span className="text-muted-foreground">Slope = </span>
+													<span
+														className={`font-semibold ${linearResult.slope >= 0 ? "text-success" : "text-destructive"}`}
+													>
+														{linearResult.slope >= 0 ? "+" : ""}
+														{linearResult.slope.toFixed(2)} kakera/day²
+													</span>
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
+
+								{linearResult && (
+									<div className="space-y-4">
+										<div className="bg-secondary/50 rounded-lg p-4">
+											<h4 className="text-sm font-semibold mb-2 text-info">
+												Daily Income Model
+											</h4>
+											<p className="font-mono text-sm text-foreground">
+												daily_income = {linearResult.intercept.toFixed(2)} + (
+												{linearResult.slope.toFixed(2)} × day)
+											</p>
+											<p className="text-xs text-muted-foreground mt-2">
+												{linearResult.slope >= 0
+													? `Your daily income is growing by ~${linearResult.slope.toFixed(1)} kakera each day`
+													: `Your daily income is declining by ~${Math.abs(linearResult.slope).toFixed(1)} kakera each day`}
+											</p>
+										</div>
+
+										<div>
+											<h4 className="text-sm font-semibold mb-3 text-muted-foreground">
+												Projected Cumulative Totals
+											</h4>
+											<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+												{linearResult.predictions.map((prediction) => {
+													const daysAhead =
+														prediction.day - linearResult.lastDayInData;
+													return (
+														<div
+															key={prediction.day}
+															className="bg-muted/30 border border-info/20 rounded-lg p-3"
+														>
+															<div className="text-info text-xs mb-1">
+																+{daysAhead} days
+															</div>
+															<div className="text-lg font-bold text-info">
+																{prediction.cumulative.toLocaleString()}
+															</div>
+															<div className="text-xs text-muted-foreground mt-1">
+																~{prediction.dailyIncome.toLocaleString()}/day
+															</div>
+														</div>
+													);
+												})}
+											</div>
+										</div>
+
+										<div className="bg-secondary/30 rounded-lg p-4 text-sm">
+											<h4 className="font-semibold mb-2 text-warning">
+												How it works:
+											</h4>
+											<ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+												<li>
+													Calculates daily income totals from your claim history
+												</li>
+												<li>
+													Fits a linear regression to find if your daily income is
+													trending up/down
+												</li>
+												<li>
+													Predicts future daily incomes using the fitted line
+												</li>
+												<li>
+													Sums predicted daily incomes to get cumulative
+													projections
+												</li>
+											</ol>
+										</div>
+
+										<div>
+											<h4 className="text-sm font-semibold mb-3 text-muted-foreground">
+												Cumulative Growth Projection
+											</h4>
+											<div className="h-[350px] w-full">
+												<ResponsiveContainer width="100%" height="100%">
+													<LineChart
+														data={[
+															...cumulativeData.map((d, i) => ({
+																day: i + 1,
+																actual: d.cumulativeValue,
+																predicted: null as number | null,
+																isFuture: false,
+															})),
+															...Array.from({ length: 90 }, (_, i) => {
+																const day = linearResult.lastDayInData + i + 1;
+																let cumulativeFuture = 0;
+																for (
+																	let d = linearResult.lastDayInData + 1;
+																	d <= day;
+																	d++
+																) {
+																	cumulativeFuture += Math.max(
+																		0,
+																		linearResult.slope * d +
+																			linearResult.intercept,
+																	);
+																}
+																return {
+																	day,
+																	actual: null as number | null,
+																	predicted:
+																		linearResult.currentBaseline +
+																		cumulativeFuture,
+																	isFuture: true,
+																};
+															}),
+														]}
+													>
+														<CartesianGrid
+															strokeDasharray="3 3"
+															stroke={CHART_GRID_STROKE}
+														/>
+														<XAxis
+															dataKey="day"
+															stroke={CHART_AXIS_STROKE}
+															fontSize={10}
+															tickLine={false}
+															axisLine={false}
+														/>
+														<YAxis
+															stroke={CHART_AXIS_STROKE}
+															fontSize={12}
+															tickLine={false}
+															axisLine={false}
+															tickFormatter={(value) =>
+																`${(value / 1000).toFixed(0)}k`
+															}
+														/>
+														<Tooltip
+															contentStyle={CHART_TOOLTIP_STYLE}
+															formatter={(
+																value: number | undefined,
+																_name,
+																props,
+															) => {
+																if (value === undefined) return "";
+																const isFuture = props.payload?.isFuture;
+																return (
+																	<span
+																		className={isFuture ? "text-info" : ""}
+																	>
+																		{value.toLocaleString()}
+																		{isFuture ? " (projected)" : ""}
+																	</span>
+																);
+															}}
+														/>
+														<Line
+															type="monotone"
+															dataKey="actual"
+															stroke={CHART_COLORS.sakura}
+															strokeWidth={2}
+															dot={false}
+															name="Actual"
+															connectNulls={false}
+														/>
+														<Line
+															type="monotone"
+															dataKey="predicted"
+															stroke={CHART_COLORS.cyan}
+															strokeWidth={2}
+															strokeDasharray="5 5"
+															dot={false}
+															name="Projected"
+														/>
+													</LineChart>
+												</ResponsiveContainer>
+											</div>
+											<div className="flex items-center justify-center gap-6 text-sm mt-4">
+												<div className="flex items-center gap-2">
+													<div
+														className="w-8 h-0.5"
+														style={{ backgroundColor: CHART_COLORS.sakura }}
+													/>
+													<span className="text-muted-foreground">
+														Actual Data
+													</span>
+												</div>
+												<div className="flex items-center gap-2">
+													<div
+														className="w-8 h-0.5"
+														style={{
+															backgroundColor: CHART_COLORS.cyan,
+															borderStyle: "dashed",
+														}}
+													/>
+													<span className="text-muted-foreground">
+														Model Projection
+													</span>
+												</div>
+											</div>
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+					</CollapsibleContent>
+				</Collapsible>
+			</Card>
+
+			{/* Claims Table */}
+			<Card className="glass overflow-hidden">
+				<CardHeader className="flex-row items-center justify-between">
+					<CardTitle>Claims</CardTitle>
 					<div className="flex items-center gap-3">
-						<span className="text-sm text-foreground-muted">
+						<span className="text-sm text-muted-foreground">
 							{sortedClaims.length} total
 						</span>
-						<select
+						<NativeSelect
 							value={itemsPerPage}
 							onChange={(e) => {
 								setItemsPerPage(Number(e.target.value));
 								setCurrentPage(1);
 							}}
-							className="px-3 py-1.5 bg-background-tertiary rounded-lg border border-border text-sm focus:border-sakura-500 focus:outline-none"
 						>
-							<option value={10}>10 per page</option>
-							<option value={20}>20 per page</option>
-							<option value={50}>50 per page</option>
-							<option value={100}>100 per page</option>
-						</select>
+							<NativeSelectOption value={10}>10 per page</NativeSelectOption>
+							<NativeSelectOption value={20}>20 per page</NativeSelectOption>
+							<NativeSelectOption value={50}>50 per page</NativeSelectOption>
+							<NativeSelectOption value={100}>100 per page</NativeSelectOption>
+						</NativeSelect>
 					</div>
-				</div>
-				<div className="overflow-x-auto">
-					<table className="w-full text-left">
-						<thead>
-							<tr className="bg-background-tertiary/50">
-								<th className="px-6 py-3 text-sm font-semibold">
+				</CardHeader>
+				<CardContent className="p-0">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>
 									<button
 										type="button"
 										onClick={() => handleSort("characterName")}
-										className="flex items-center hover:text-sakura-400 transition-colors"
+										className="flex items-center hover:text-primary transition-colors"
 									>
 										Character
 										<SortIndicator field="characterName" />
 									</button>
-								</th>
-								<th className="px-6 py-3 text-sm font-semibold">
+								</TableHead>
+								<TableHead>
 									<button
 										type="button"
 										onClick={() => handleSort("type")}
-										className="flex items-center hover:text-sakura-400 transition-colors"
+										className="flex items-center hover:text-primary transition-colors"
 									>
 										Type
 										<SortIndicator field="type" />
 									</button>
-								</th>
-								<th className="px-6 py-3 text-sm font-semibold text-right">
+								</TableHead>
+								<TableHead className="text-right">
 									<button
 										type="button"
 										onClick={() => handleSort("value")}
-										className="flex items-center justify-end ml-auto hover:text-sakura-400 transition-colors"
+										className="flex items-center justify-end ml-auto hover:text-primary transition-colors"
 									>
 										Value
 										<SortIndicator field="value" />
 									</button>
-								</th>
-								<th className="px-6 py-3 text-sm font-semibold text-center">
+								</TableHead>
+								<TableHead className="text-center">
 									Status
-								</th>
-								<th className="px-6 py-3 text-sm font-semibold">
+								</TableHead>
+								<TableHead>
 									<button
 										type="button"
 										onClick={() => handleSort("claimedAt")}
-										className="flex items-center hover:text-sakura-400 transition-colors"
+										className="flex items-center hover:text-primary transition-colors"
 									>
 										Date
 										<SortIndicator field="claimedAt" />
 									</button>
-								</th>
-								<th className="px-6 py-3 text-sm font-semibold w-24"></th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-border">
+								</TableHead>
+								<TableHead className="w-24" />
+							</TableRow>
+						</TableHeader>
+						<TableBody>
 							{paginatedClaims.length === 0 ? (
-								<tr>
-									<td
+								<TableRow>
+									<TableCell
 										colSpan={6}
-										className="px-6 py-8 text-center text-foreground-muted"
+										className="text-center text-muted-foreground py-8"
 									>
 										No claims found
-									</td>
-								</tr>
+									</TableCell>
+								</TableRow>
 							) : (
 								paginatedClaims.map((claim) => (
-									<tr
-										key={claim.id}
-										className="hover:bg-white/5 transition-colors"
-									>
-										<td className="px-6 py-4">
+									<TableRow key={claim.id}>
+										<TableCell>
 											{claim.characterName || (
-												<span className="text-foreground-subtle italic">
+												<span className="text-muted-foreground/70 italic">
 													Unknown
 												</span>
 											)}
-										</td>
-										<td className="px-6 py-4">
-											<span
-												className="px-2 py-0.5 rounded text-xs font-medium capitalize"
+										</TableCell>
+										<TableCell>
+											<Badge
+												variant="outline"
+												className="capitalize"
 												style={{
-													backgroundColor: `${getKakeraColor(claim.type)}20`,
+													backgroundColor: `color-mix(in srgb, ${getKakeraColor(claim.type)} 12%, transparent)`,
 													color: getKakeraColor(claim.type),
+													borderColor: `color-mix(in srgb, ${getKakeraColor(claim.type)} 25%, transparent)`,
 												}}
 											>
 												{String(claim.type).toLowerCase()}
-											</span>
-										</td>
-										<td className="px-6 py-4 text-right font-mono text-sakura-400">
+											</Badge>
+										</TableCell>
+										<TableCell className="text-right font-mono text-primary">
 											{claim.value.toLocaleString()}
-										</td>
-										<td className="px-6 py-4 text-center">
+										</TableCell>
+										<TableCell className="text-center">
 											{claim.isClaimed ? (
-												<span className="text-green-400 text-xs">Claimed</span>
+												<span className="text-success text-xs">Claimed</span>
 											) : (
-												<span className="text-foreground-muted text-xs">
+												<span className="text-muted-foreground text-xs">
 													Not Claimed
 												</span>
 											)}
-										</td>
-										<td className="px-6 py-4 text-sm text-foreground-muted">
+										</TableCell>
+										<TableCell className="text-muted-foreground">
 											{format(parseISO(claim.claimedAt), "MMM dd, HH:mm")}
-										</td>
-										<td className="px-6 py-4">
+										</TableCell>
+										<TableCell>
 											{deleteConfirmId === claim.id ? (
 												<div className="flex items-center gap-2">
-													<button
-														type="button"
+													<Button
+														variant="ghost"
+														size="sm"
+														className="text-destructive hover:text-destructive h-auto py-0.5 px-1.5 text-xs"
 														onClick={() => deleteClaimMutation.mutate(claim.id)}
-														className="text-torii-400 hover:text-torii-300 text-xs"
 													>
 														Confirm
-													</button>
-													<button
-														type="button"
+													</Button>
+													<Button
+														variant="ghost"
+														size="sm"
+														className="text-muted-foreground h-auto py-0.5 px-1.5 text-xs"
 														onClick={() => setDeleteConfirmId(null)}
-														className="text-foreground-muted hover:text-foreground text-xs"
 													>
 														Cancel
-													</button>
+													</Button>
 												</div>
 											) : (
 												<div className="flex items-center gap-1">
-													<button
-														type="button"
+													<Button
+														variant="ghost"
+														size="sm"
+														className="h-auto p-1.5 text-muted-foreground hover:text-primary"
 														onClick={() => setEditClaim(claim)}
-														className="p-1.5 text-foreground-muted hover:text-sakura-400 hover:bg-sakura-500/10 rounded transition-colors"
 													>
 														<PencilSimple size={16} />
-													</button>
-													<button
-														type="button"
+													</Button>
+													<Button
+														variant="ghost"
+														size="sm"
+														className="h-auto p-1.5 text-muted-foreground hover:text-destructive"
 														onClick={() => setDeleteConfirmId(claim.id)}
-														className="p-1.5 text-foreground-muted hover:text-torii-400 hover:bg-torii-500/10 rounded transition-colors"
 													>
 														<Trash size={16} />
-													</button>
+													</Button>
 												</div>
 											)}
-										</td>
-									</tr>
+										</TableCell>
+									</TableRow>
 								))
 							)}
-						</tbody>
-					</table>
-				</div>
+						</TableBody>
+					</Table>
+				</CardContent>
 				{totalPages > 1 && (
 					<div className="p-4 border-t border-border flex items-center justify-between">
-						<div className="text-sm text-foreground-muted">
+						<div className="text-sm text-muted-foreground">
 							Showing {startIndex + 1} to{" "}
 							{Math.min(startIndex + itemsPerPage, sortedClaims.length)} of{" "}
 							{sortedClaims.length} claims
 						</div>
 						<div className="flex items-center gap-2">
-							<button
-								type="button"
+							<Button
+								variant="outline"
+								size="sm"
 								onClick={() => setCurrentPage(1)}
 								disabled={currentPage === 1}
-								className="px-3 py-1.5 bg-background-tertiary rounded-lg text-sm hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 							>
 								First
-							</button>
-							<button
-								type="button"
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
 								onClick={() => setCurrentPage(currentPage - 1)}
 								disabled={currentPage === 1}
-								className="px-3 py-1.5 bg-background-tertiary rounded-lg text-sm hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 							>
 								Previous
-							</button>
+							</Button>
 							<span className="px-3 py-1.5 text-sm">
 								Page {currentPage} of {totalPages}
 							</span>
-							<button
-								type="button"
+							<Button
+								variant="outline"
+								size="sm"
 								onClick={() => setCurrentPage(currentPage + 1)}
 								disabled={currentPage === totalPages}
-								className="px-3 py-1.5 bg-background-tertiary rounded-lg text-sm hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 							>
 								Next
-							</button>
-							<button
-								type="button"
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
 								onClick={() => setCurrentPage(totalPages)}
 								disabled={currentPage === totalPages}
-								className="px-3 py-1.5 bg-background-tertiary rounded-lg text-sm hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 							>
 								Last
-							</button>
+							</Button>
 						</div>
 					</div>
 				)}
-			</div>
+			</Card>
 
+			{/* Add/Edit Claim Modals */}
 			<KakeraClaimModal
 				isOpen={showAddModal}
 				onClose={() => setShowAddModal(false)}
@@ -1742,160 +1817,144 @@ function StatisticsPage() {
 				}}
 			/>
 
-			{showImportConfirm && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="glass rounded-xl w-full max-w-md mx-4 p-6 lantern-top">
-						<div className="flex items-center gap-3 mb-4">
+			{/* Import Confirm AlertDialog */}
+			<AlertDialog open={showImportConfirm} onOpenChange={setShowImportConfirm}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-3">
 							<Warning size={24} className="text-warning" weight="bold" />
-							<h2 className="text-xl font-semibold">Import Claims</h2>
-						</div>
-						<p className="text-foreground-muted mb-6">
-							This will <strong className="text-torii-400">overwrite</strong>{" "}
+							Import Claims
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will <strong className="text-destructive">overwrite</strong>{" "}
 							all your current kakera claims with the{" "}
 							{pendingImportData?.length || 0} claims from the file. This action
 							cannot be undone.
-						</p>
-						<div className="flex gap-3 justify-end">
-							<button
-								type="button"
-								onClick={() => {
-									setShowImportConfirm(false);
-									setPendingImportData(null);
-								}}
-								className="px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									if (pendingImportData) {
-										importClaimsMutation.mutate(pendingImportData);
-									}
-								}}
-								disabled={importClaimsMutation.isPending}
-								className="px-4 py-2 bg-warning text-background font-semibold rounded-lg hover:bg-warning/80 transition-colors disabled:opacity-50"
-							>
-								{importClaimsMutation.isPending ? "Importing..." : "Import"}
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel
+							onClick={() => {
+								setShowImportConfirm(false);
+								setPendingImportData(null);
+							}}
+						>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							onClick={() => {
+								if (pendingImportData) {
+									importClaimsMutation.mutate(pendingImportData);
+								}
+							}}
+							disabled={importClaimsMutation.isPending}
+						>
+							{importClaimsMutation.isPending ? "Importing..." : "Import"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
-			{showWipeConfirm && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="glass rounded-xl w-full max-w-md mx-4 p-6 lantern-top">
-						<div className="flex items-center gap-3 mb-4">
-							<Warning size={24} className="text-torii-400" weight="bold" />
-							<h2 className="text-xl font-semibold">Wipe All Claims</h2>
-						</div>
-						<p className="text-foreground-muted mb-6">
+			{/* Wipe Confirm AlertDialog */}
+			<AlertDialog open={showWipeConfirm} onOpenChange={setShowWipeConfirm}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-3">
+							<Warning size={24} className="text-destructive" weight="bold" />
+							Wipe All Claims
+						</AlertDialogTitle>
+						<AlertDialogDescription>
 							This will permanently delete all {claims?.length || 0} of your
 							kakera claims. This action cannot be undone.
-						</p>
-						<div className="flex gap-3 justify-end">
-							<button
-								type="button"
-								onClick={() => setShowWipeConfirm(false)}
-								className="px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								type="button"
-								onClick={() => wipeClaimsMutation.mutate()}
-								disabled={wipeClaimsMutation.isPending}
-								className="px-4 py-2 bg-torii-500 text-white font-semibold rounded-lg hover:bg-torii-300 transition-colors disabled:opacity-50"
-							>
-								{wipeClaimsMutation.isPending ? "Deleting..." : "Wipe All"}
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setShowWipeConfirm(false)}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							variant="destructive"
+							onClick={() => wipeClaimsMutation.mutate()}
+							disabled={wipeClaimsMutation.isPending}
+						>
+							{wipeClaimsMutation.isPending ? "Deleting..." : "Wipe All"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
-			{showBulkImportModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="glass rounded-xl w-full max-w-2xl mx-4 p-6 lantern-top">
-						<div className="flex items-center gap-3 mb-4">
-							<FileText size={24} className="text-sakura-400" weight="bold" />
-							<h2 className="text-xl font-semibold">
-								Bulk Import from Discord
-							</h2>
-						</div>
-						<p className="text-foreground-muted mb-4">
+			{/* Bulk Import Dialog */}
+			<Dialog open={showBulkImportModal} onOpenChange={setShowBulkImportModal}>
+				<DialogContent className="sm:max-w-2xl">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-3">
+							<FileText size={24} className="text-primary" weight="bold" />
+							Bulk Import from Discord
+						</DialogTitle>
+						<DialogDescription>
 							Paste your Discord kakera log data below. The parser will
 							automatically extract kakera claims.
-						</p>
-						<div className="space-y-4">
-							<div>
-								<label
-									htmlFor="character-name"
-									className="block text-sm font-medium mb-2"
-								>
-									Character Name (optional)
-								</label>
-								<input
-									id="character-name"
-									type="text"
-									value={bulkImportCharacterName}
-									onChange={(e) => setBulkImportCharacterName(e.target.value)}
-									placeholder="e.g., iamshiron"
-									className="w-full px-4 py-2 bg-background-tertiary rounded-lg border border-border focus:border-sakura-500 focus:outline-none"
-								/>
-								<p className="text-xs text-foreground-muted mt-1">
-									If provided, all claims will be associated with this
-									character.
-								</p>
-							</div>
-							<div>
-								<label
-									htmlFor="log-data"
-									className="block text-sm font-medium mb-2"
-								>
-									Log Data
-								</label>
-								<textarea
-									id="log-data"
-									value={bulkImportData}
-									onChange={(e) => setBulkImportData(e.target.value)}
-									placeholder={`Paste Discord log here, e.g.:
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div>
+							<Label htmlFor="character-name" className="mb-2">
+								Character Name (optional)
+							</Label>
+							<Input
+								id="character-name"
+								type="text"
+								value={bulkImportCharacterName}
+								onChange={(e) => setBulkImportCharacterName(e.target.value)}
+								placeholder="e.g., iamshiron"
+								className="h-9"
+							/>
+							<p className="text-xs text-muted-foreground mt-1">
+								If provided, all claims will be associated with this
+								character.
+							</p>
+						</div>
+						<div>
+							<Label htmlFor="log-data" className="mb-2">
+								Log Data
+							</Label>
+							<Textarea
+								id="log-data"
+								value={bulkImportData}
+								onChange={(e) => setBulkImportData(e.target.value)}
+								placeholder={`Paste Discord log here, e.g.:
 Logan Yarborough
 APP
  — 10/22/2025 7:06 PM
 :kakera:iamshiron +121 ($k)`}
-									rows={10}
-									className="w-full px-4 py-3 bg-background-tertiary rounded-lg border border-border focus:border-sakura-500 focus:outline-none font-mono text-sm resize-none"
-								/>
-							</div>
-						</div>
-						<div className="flex gap-3 justify-end mt-6">
-							<button
-								type="button"
-								onClick={() => {
-									setShowBulkImportModal(false);
-									setBulkImportData("");
-									setBulkImportCharacterName("");
-								}}
-								className="px-4 py-2 bg-background-tertiary rounded-lg hover:bg-background-secondary transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								type="button"
-								onClick={() => bulkImportMutation.mutate()}
-								disabled={
-									bulkImportMutation.isPending || !bulkImportData.trim()
-								}
-								className="px-4 py-2 bg-sakura-500 text-background font-semibold rounded-lg hover:bg-sakura-300 transition-colors disabled:opacity-50"
-							>
-								{bulkImportMutation.isPending ? "Importing..." : "Import"}
-							</button>
+								rows={10}
+								className="font-mono text-sm resize-none"
+							/>
 						</div>
 					</div>
-				</div>
-			)}
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setShowBulkImportModal(false);
+								setBulkImportData("");
+								setBulkImportCharacterName("");
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={() => bulkImportMutation.mutate()}
+							disabled={
+								bulkImportMutation.isPending || !bulkImportData.trim()
+							}
+						>
+							{bulkImportMutation.isPending ? "Importing..." : "Import"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
