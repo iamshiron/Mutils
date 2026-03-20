@@ -1,15 +1,20 @@
-import { Prohibit, Trash, Upload, Warning } from "@phosphor-icons/react";
+import {
+	ProhibitIcon,
+	TrashIcon,
+	UploadIcon,
+	WarningIcon,
+} from "@phosphor-icons/react";
 import { useState } from "react";
-import type { ImportResponse } from "@/types";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import type { ImportResponse } from "@/types";
 
 interface ImportModalProps {
 	isOpen: boolean;
@@ -88,7 +93,12 @@ export function ImportModal({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+		<Dialog
+			open={isOpen}
+			onOpenChange={(open) => {
+				if (!open) handleClose();
+			}}
+		>
 			<DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
 				<DialogHeader>
 					<DialogTitle>Import Collection</DialogTitle>
@@ -118,7 +128,7 @@ export function ImportModal({
 
 							<div className="mt-4 pt-4 border-t border-border">
 								<div className="flex items-center gap-2 mb-2">
-									<Prohibit size={16} className="text-destructive" />
+									<ProhibitIcon size={16} className="text-destructive" />
 									<p className="text-muted-foreground text-sm">
 										Disabled Characters (optional)
 									</p>
@@ -182,7 +192,10 @@ Elizabeth  🚫`}
 						</>
 					) : (
 						<div className="text-center py-8">
-							<Warning size={48} className="text-destructive mx-auto mb-4" />
+							<WarningIcon
+								size={48}
+								className="text-destructive mx-auto mb-4"
+							/>
 							<h3 className="text-lg font-semibold mb-2">Clear Collection?</h3>
 							<p className="text-muted-foreground mb-6">
 								This will permanently delete all characters from your
@@ -214,7 +227,7 @@ Elizabeth  🚫`}
 							className="text-destructive hover:text-destructive"
 							onClick={() => setShowClearConfirm(true)}
 						>
-							<Trash size={18} />
+							<TrashIcon size={18} />
 							Clear Collection
 						</Button>
 						<div className="flex gap-3">
@@ -225,7 +238,7 @@ Elizabeth  🚫`}
 								onClick={handleImport}
 								disabled={isLoading || (!data.trim() && !disabledData.trim())}
 							>
-								<Upload size={18} />
+								<UploadIcon size={18} />
 								{isLoading ? "Importing..." : "Import"}
 							</Button>
 						</div>

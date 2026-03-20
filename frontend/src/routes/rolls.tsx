@@ -1,4 +1,9 @@
-import { CheckCircle, DiceFive, Key, Star } from "@phosphor-icons/react";
+import {
+	CheckCircleIcon,
+	DiceFiveIcon,
+	KeyIcon,
+	StarIcon,
+} from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
@@ -186,9 +191,9 @@ function RollsPage() {
 	return (
 		<div className="max-w-6xl mx-auto">
 			<Card className="glass mb-6">
-				<CardContent className="pt-6">
+				<CardContent>
 					<div className="flex items-center gap-3">
-						<DiceFive size={28} className="text-primary" />
+						<DiceFiveIcon size={28} className="text-primary" />
 						<div>
 							<h1 className="text-2xl font-bold">Your Roll Stats</h1>
 							<p className="text-muted-foreground text-sm">
@@ -307,7 +312,7 @@ function RollsPage() {
 
 				<ResultCard
 					title="Specific Starwish"
-					icon={<Star size={16} className="text-warning" />}
+					icon={<StarIcon size={16} className="text-warning" />}
 					percent={formatPercent(results.starwishProb)}
 					odds={formatOdds(results.starwishProb)}
 					mult={results.starwishMult.toFixed(2)}
@@ -327,7 +332,7 @@ function RollsPage() {
 
 				<ResultCard
 					title="ANY Rollable Owned"
-					icon={<CheckCircle size={16} className="text-success" />}
+					icon={<CheckCircleIcon size={16} className="text-success" />}
 					percent={formatPercent(results.ownedProb, 2)}
 					odds={formatOdds(results.ownedProb)}
 					subtext={`Active Targets: ${results.activeOwned}`}
@@ -337,7 +342,7 @@ function RollsPage() {
 				{results.doubleKeyChance > 0 && (
 					<ResultCard
 						title="Double Key Chance"
-						icon={<Key size={16} className="text-info" />}
+						icon={<KeyIcon size={16} className="text-info" />}
 						percent={`${results.doubleKeyChance}%`}
 						subtext="Applied when rolling a wished character"
 						variant="info"
@@ -356,7 +361,7 @@ interface StatsCardProps {
 function StatsCard({ title, items }: StatsCardProps) {
 	return (
 		<Card className="glass">
-			<CardContent className="pt-4">
+			<CardContent>
 				<h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
 					{title}
 				</h3>

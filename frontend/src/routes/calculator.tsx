@@ -1,11 +1,11 @@
 import {
-	Calculator,
-	CheckCircle,
-	Download,
-	Key,
-	Star,
-	Trash,
-	Upload,
+	CalculatorIcon,
+	CheckCircleIcon,
+	DownloadIcon,
+	KeyIcon,
+	StarIcon,
+	TrashIcon,
+	UploadIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -233,7 +233,7 @@ function formatPercent(value: number, decimals = 4): string {
 
 function CalculatorPage() {
 	const queryClient = useQueryClient();
-	const [inputs, setInputs] = useState<CalculatorInputs>(defaultInputs);
+	const [inputs, setInputs] = useState<CalculatorIconInputs>(defaultInputs);
 	const [configName, setConfigName] = useState("");
 	const [importError, setImportError] = useState<string | null>(null);
 
@@ -376,7 +376,7 @@ function CalculatorPage() {
 			<Card className="glass mb-6">
 				<CardHeader>
 					<div className="flex items-center gap-3">
-						<Calculator size={28} className="text-primary" />
+						<CalculatorIcon size={28} className="text-primary" />
 						<div>
 							<CardTitle className="text-2xl font-bold">
 								What If Calculator
@@ -457,7 +457,7 @@ function CalculatorPage() {
 													size="sm"
 													onClick={() => handleDeleteConfig(config.id)}
 												>
-													<Trash size={14} />
+													<TrashIcon size={14} />
 												</Button>
 											</div>
 										</div>
@@ -474,12 +474,12 @@ function CalculatorPage() {
 									disabled={configs.length === 0}
 									className="flex-1"
 								>
-									<Download size={16} />
+									<DownloadIcon size={16} />
 									Export JSON
 								</Button>
 								<Button variant="outline" className="flex-1" asChild>
 									<label className="cursor-pointer">
-										<Upload size={16} />
+										<UploadIcon size={16} />
 										Import JSON
 										<input
 											type="file"
@@ -531,7 +531,7 @@ function CalculatorPage() {
 
 					<ResultCard
 						title="Specific Starwish"
-						icon={<Star size={16} className="text-warning" />}
+						icon={<StarIcon size={16} className="text-warning" />}
 						percent={formatPercent(results.starwishProb)}
 						odds={formatOdds(results.starwishProb)}
 						mult={results.starwishMult.toFixed(2)}
@@ -551,7 +551,7 @@ function CalculatorPage() {
 
 					<ResultCard
 						title="ANY Rollable Owned"
-						icon={<CheckCircle size={16} className="text-success" />}
+						icon={<CheckCircleIcon size={16} className="text-success" />}
 						percent={formatPercent(results.ownedProb, 2)}
 						odds={formatOdds(results.ownedProb)}
 						subtext={`Active Targets: ${results.activeOwned}`}
@@ -561,7 +561,7 @@ function CalculatorPage() {
 					{results.doubleKeyChance > 0 && (
 						<ResultCard
 							title="Double Key Chance"
-							icon={<Key size={16} className="text-info" />}
+							icon={<KeyIcon size={16} className="text-info" />}
 							percent={`${results.doubleKeyChance}%`}
 							subtext="Applied when rolling a wished character"
 							variant="info"

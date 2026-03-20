@@ -1,19 +1,18 @@
 import {
-	CaretDown,
-	Download,
-	FolderOpen,
-	Funnel,
-	Images,
-	Key,
-	ListBullets,
-	MagnifyingGlass,
-	Pencil,
-	SignIn,
-	SortAscending,
-	Star,
-	Trash,
-	Upload,
-	X,
+	CaretDownIcon,
+	DownloadIcon,
+	FolderOpenIcon,
+	FunnelIcon,
+	ImagesIcon,
+	KeyIcon,
+	ListBulletsIcon,
+	MagnifyingGlassIcon,
+	PencilIcon,
+	SignInIcon,
+	SortAscendingIcon,
+	StarIcon,
+	TrashIcon,
+	UploadIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import {
@@ -147,7 +146,7 @@ const CharacterCard = memo(function CharacterCard({
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<div className="absolute top-2 left-2 z-10">
-									<Star
+									<StarIcon
 										size={18}
 										weight={
 											wishlistStatus.type === "starwish" ? "fill" : "regular"
@@ -186,7 +185,7 @@ const CharacterCard = memo(function CharacterCard({
 						</h3>
 						{character.keyType && (
 							<div className="flex items-center gap-0.5 shrink-0">
-								<Key
+								<KeyIcon
 									size={16}
 									className={
 										keyColors[character.keyType] || "text-muted-foreground/70"
@@ -244,7 +243,7 @@ const CharacterCard = memo(function CharacterCard({
 											<span>
 												{character.kakeraStats.totalValue.toLocaleString()}
 											</span>
-											<CaretDown
+											<CaretDownIcon
 												size={12}
 												weight="bold"
 												className="opacity-50"
@@ -288,32 +287,32 @@ const CharacterCard = memo(function CharacterCard({
 						onClick={() => onRemoveFromWishlist(wishlistStatus.id)}
 						className="text-destructive focus:text-destructive"
 					>
-						<X size={14} className="mr-2" />
+						<XIcon size={14} className="mr-2" />
 						Remove from{" "}
 						{wishlistStatus.type === "starwish" ? "Starwish" : "Wishlist"}
 					</ContextMenuItem>
 				) : (
 					<>
 						<ContextMenuItem onClick={() => onAddToWishlist(entry, false)}>
-							<Star size={14} className="mr-2" />
+							<StarIcon size={14} className="mr-2" />
 							Add to Wishlist
 						</ContextMenuItem>
 						<ContextMenuItem onClick={() => onAddToWishlist(entry, true)}>
-							<Star size={14} className="mr-2 text-warning" weight="fill" />
+							<StarIcon size={14} className="mr-2 text-warning" weight="fill" />
 							Add as Starwish
 						</ContextMenuItem>
 					</>
 				)}
 				<ContextMenuSeparator />
 				<ContextMenuItem onClick={() => onEdit(entry)}>
-					<Pencil size={14} className="mr-2" />
+					<PencilIcon size={14} className="mr-2" />
 					Edit
 				</ContextMenuItem>
 				<ContextMenuItem
 					onClick={() => onDelete(entry)}
 					className="text-destructive focus:text-destructive"
 				>
-					<Trash size={14} className="mr-2" />
+					<TrashIcon size={14} className="mr-2" />
 					Remove
 				</ContextMenuItem>
 			</ContextMenuContent>
@@ -467,7 +466,7 @@ function ExportModal({
 						disabled={isExporting}
 						className="h-9 px-4 text-sm"
 					>
-						<Download size={18} />
+						<DownloadIcon size={18} />
 						{isExporting ? "Exporting..." : "Export JSON"}
 					</Button>
 				</DialogFooter>
@@ -934,7 +933,7 @@ function CollectionPage() {
 	if (!isAuthenticated) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-				<FolderOpen size={48} className="text-muted-foreground/70 mb-4" />
+				<FolderOpenIcon size={48} className="text-muted-foreground/70 mb-4" />
 				<h2 className="text-xl font-semibold mb-2">Login Required</h2>
 				<p className="text-muted-foreground mb-4">
 					Please login to view your collection
@@ -943,7 +942,7 @@ function CollectionPage() {
 					onClick={() => navigate({ to: "/" })}
 					className="h-9 px-6 text-sm"
 				>
-					<SignIn size={20} weight="bold" />
+					<SignInIcon size={20} weight="bold" />
 					Login with Discord
 				</Button>
 			</div>
@@ -993,7 +992,7 @@ function CollectionPage() {
 							size="sm"
 							onClick={() => setShowExport(true)}
 						>
-							<Download size={16} />
+							<DownloadIcon size={16} />
 							Export
 						</Button>
 						{imageStatus &&
@@ -1005,7 +1004,7 @@ function CollectionPage() {
 									onClick={() => processImagesMutation.mutate()}
 									disabled={processImagesMutation.isPending}
 								>
-									<Images size={16} />
+									<ImagesIcon size={16} />
 									{processImagesMutation.isPending
 										? "Caching..."
 										: "Cache Images"}
@@ -1016,11 +1015,11 @@ function CollectionPage() {
 							size="sm"
 							onClick={() => setShowSeriesImport(true)}
 						>
-							<ListBullets size={16} />
+							<ListBulletsIcon size={16} />
 							Series
 						</Button>
 						<Button size="sm" onClick={() => setShowImport(true)}>
-							<Upload size={16} />
+							<UploadIcon size={16} />
 							Import
 						</Button>
 					</div>
@@ -1050,7 +1049,7 @@ function CollectionPage() {
 												: "bg-muted/30 text-muted-foreground hover:bg-muted/50"
 										}`}
 									>
-										<Key size={12} weight="fill" className={config.color} />
+										<KeyIcon size={12} weight="fill" className={config.color} />
 										<span>{config.label}</span>
 										<span className="opacity-60">{count}</span>
 									</button>
@@ -1079,7 +1078,7 @@ function CollectionPage() {
 
 			<div className="flex flex-col sm:flex-row gap-3">
 				<div className="relative flex-1">
-					<MagnifyingGlass
+					<MagnifyingGlassIcon
 						className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70"
 						size={18}
 					/>
@@ -1099,7 +1098,7 @@ function CollectionPage() {
 							size="icon"
 							className="h-10 w-10 relative"
 						>
-							<Funnel size={18} />
+							<FunnelIcon size={18} />
 							{hasActiveFilters && (
 								<span className="absolute -top-1 -right-1 size-3 bg-primary rounded-full" />
 							)}
@@ -1182,7 +1181,7 @@ function CollectionPage() {
 									onClick={clearAllFilters}
 									className="w-full text-destructive hover:text-destructive"
 								>
-									<X size={14} />
+									<XIcon size={14} />
 									Clear all filters
 								</Button>
 							)}
@@ -1210,7 +1209,7 @@ function CollectionPage() {
 					className="h-10 w-10"
 					onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
 				>
-					<SortAscending
+					<SortAscendingIcon
 						size={18}
 						className={`transition-transform ${sortOrder === "desc" ? "rotate-180" : ""}`}
 					/>
@@ -1238,7 +1237,7 @@ function CollectionPage() {
 								onClick={() => setMinKakera(0)}
 								className="ml-1 hover:bg-background/50 rounded-sm p-0.5"
 							>
-								<X size={10} />
+								<XIcon size={10} />
 							</button>
 						</Badge>
 					)}
@@ -1249,7 +1248,7 @@ function CollectionPage() {
 								onClick={() => setDisabledFilter("all")}
 								className="ml-1 hover:bg-background/50 rounded-sm p-0.5"
 							>
-								<X size={10} />
+								<XIcon size={10} />
 							</button>
 						</Badge>
 					)}
@@ -1257,13 +1256,13 @@ function CollectionPage() {
 						const config = KEY_TYPE_CONFIG[keyType];
 						return (
 							<Badge key={keyType} variant="secondary" className="gap-1 pr-1">
-								<Key size={10} weight="fill" className={config?.color} />
+								<KeyIcon size={10} weight="fill" className={config?.color} />
 								{config?.label ?? keyType}
 								<button
 									onClick={() => toggleKeyType(keyType)}
 									className="ml-1 hover:bg-background/50 rounded-sm p-0.5"
 								>
-									<X size={10} />
+									<XIcon size={10} />
 								</button>
 							</Badge>
 						);
@@ -1281,7 +1280,7 @@ function CollectionPage() {
 
 			{!data?.items.length ? (
 				<div className="flex flex-col items-center justify-center py-20 text-center">
-					<FolderOpen size={48} className="text-muted-foreground/50 mb-4" />
+					<FolderOpenIcon size={48} className="text-muted-foreground/50 mb-4" />
 					<h2 className="text-lg font-semibold mb-2">No characters found</h2>
 					<p className="text-muted-foreground text-sm mb-6">
 						{hasActiveFilters

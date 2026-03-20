@@ -1,8 +1,8 @@
 import {
-	CastleTurret,
-	DiceFive,
-	FloppyDisk,
-	Medal,
+	CastleTurretIcon,
+	DiceFiveIcon,
+	FloppyDiskIcon,
+	MedalIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -223,7 +223,7 @@ function ProfilePage() {
 					onClick={handleSave}
 					disabled={!hasChanges || saveMutation.isPending}
 				>
-					<FloppyDisk className="mr-2 h-4 w-4" />
+					<FloppyDiskIcon className="mr-2 h-4 w-4" />
 					{saveMutation.isPending ? "Saving..." : "Save"}
 				</Button>
 			</div>
@@ -231,7 +231,7 @@ function ProfilePage() {
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<Medal className="h-5 w-5" />
+						<MedalIcon className="h-5 w-5" />
 						Kakera Badges
 					</CardTitle>
 					<CardDescription>Set your current badge levels (0–4)</CardDescription>
@@ -258,7 +258,7 @@ function ProfilePage() {
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<CastleTurret className="h-5 w-5" />
+						<CastleTurretIcon className="h-5 w-5" />
 						Tower Perks
 					</CardTitle>
 					<CardDescription>
@@ -292,7 +292,7 @@ function ProfilePage() {
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<DiceFive className="h-5 w-5" />
+						<DiceFiveIcon className="h-5 w-5" />
 						Roll Settings
 					</CardTitle>
 					<CardDescription>

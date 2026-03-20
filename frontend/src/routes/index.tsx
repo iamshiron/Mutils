@@ -1,7 +1,7 @@
+import { SignInIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { SignIn } from "@phosphor-icons/react";
-import { authApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { authApi } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
@@ -24,9 +24,12 @@ function HomePage() {
 				</p>
 			</div>
 			{isConfigured ? (
-				<Button asChild className="h-10 px-6 text-sm shadow-lg hover:shadow-glow-sakura">
+				<Button
+					asChild
+					className="h-10 px-6 text-sm shadow-lg hover:shadow-glow-sakura"
+				>
 					<a href={authApi.getDiscordUrl()}>
-						<SignIn size={20} weight="bold" />
+						<SignInIcon size={20} weight="bold" />
 						Login with Discord
 					</a>
 				</Button>
@@ -34,14 +37,8 @@ function HomePage() {
 				<div className="text-center">
 					<p className="text-warning mb-4">
 						Discord OAuth not configured. Create a{" "}
-						<code className="bg-muted px-2 py-1 rounded">
-							.env
-						</code>{" "}
-						file in{" "}
-						<code className="bg-muted px-2 py-1 rounded">
-							frontend/
-						</code>{" "}
-						with:
+						<code className="bg-muted px-2 py-1 rounded">.env</code> file in{" "}
+						<code className="bg-muted px-2 py-1 rounded">frontend/</code> with:
 					</p>
 					<pre className="bg-muted p-4 rounded-lg text-sm text-muted-foreground">
 						{`VITE_DISCORD_CLIENT_ID=your_discord_application_id
