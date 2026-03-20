@@ -20,6 +20,7 @@ public class MutilsDbContext : DbContext {
     public DbSet<BundleSeriesEntry> BundleSeriesEntries => Set<BundleSeriesEntry>();
     public DbSet<KakeraClaim> KakeraClaims => Set<KakeraClaim>();
     public DbSet<CalculatorConfig> CalculatorConfigs => Set<CalculatorConfig>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.Entity<User>(entity => {
@@ -164,6 +165,15 @@ public class MutilsDbContext : DbContext {
         modelBuilder.Entity<CalculatorConfig>(entity => {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.UserId);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserProfile>(entity => {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId).IsUnique();
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)

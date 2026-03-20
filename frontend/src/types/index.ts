@@ -249,6 +249,53 @@ export interface UpdateCalculatorConfigRequest {
     bwRollsInvested?: number;
 }
 
+export interface UserProfile {
+    id: string;
+    bronzeBadge: number;
+    silverBadge: number;
+    goldBadge: number;
+    sapphireBadge: number;
+    rubyBadge: number;
+    emeraldBadge: number;
+    diamondBadge: number;
+    towerPerk1: number;
+    towerPerk2: number;
+    towerPerk3: number;
+    towerPerk4: number;
+    towerPerk5: number;
+    towerPerk6: number;
+    towerPerk7: number;
+    towerPerk8: number;
+    towerPerk9: number;
+    towerPerk10: number;
+    towerPerk11: number;
+    towerPerk12: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface UpdateProfileRequest {
+    bronzeBadge?: number;
+    silverBadge?: number;
+    goldBadge?: number;
+    sapphireBadge?: number;
+    rubyBadge?: number;
+    emeraldBadge?: number;
+    diamondBadge?: number;
+    towerPerk1?: number;
+    towerPerk2?: number;
+    towerPerk3?: number;
+    towerPerk4?: number;
+    towerPerk5?: number;
+    towerPerk6?: number;
+    towerPerk7?: number;
+    towerPerk8?: number;
+    towerPerk9?: number;
+    towerPerk10?: number;
+    towerPerk11?: number;
+    towerPerk12?: number;
+}
+
 export interface BulkKakeraImportRequest {
     data: string;
     characterName?: string;

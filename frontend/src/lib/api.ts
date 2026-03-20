@@ -22,7 +22,9 @@ import type {
 	PaginatedResponse,
 	UpdateCalculatorConfigRequest,
 	UpdateKakeraClaimRequest,
+	UpdateProfileRequest,
 	User,
+	UserProfile,
 } from "@/types";
 
 const api = axios.create({
@@ -305,6 +307,18 @@ export const kakeraApi = {
 export const userApi = {
 	getMe: async () => {
 		const { data } = await api.get<User>("/user/me");
+		return data;
+	},
+};
+
+export const profileApi = {
+	get: async () => {
+		const { data } = await api.get<UserProfile>("/profile");
+		return data;
+	},
+
+	update: async (request: UpdateProfileRequest) => {
+		const { data } = await api.put<UserProfile>("/profile", request);
 		return data;
 	},
 };

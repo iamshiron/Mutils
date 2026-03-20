@@ -1,0 +1,48 @@
+namespace Mutils.Core.DTOs;
+
+public record UserProfileDto(
+    Guid Id,
+    int BronzeBadge,
+    int SilverBadge,
+    int GoldBadge,
+    int SapphireBadge,
+    int RubyBadge,
+    int EmeraldBadge,
+    int DiamondBadge,
+    int TowerPerk1,
+    int TowerPerk2,
+    int TowerPerk3,
+    int TowerPerk4,
+    int TowerPerk5,
+    int TowerPerk6,
+    int TowerPerk7,
+    int TowerPerk8,
+    int TowerPerk9,
+    int TowerPerk10,
+    int TowerPerk11,
+    int TowerPerk12,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
+);
+
+public record UpdateProfileRequest(
+    int? BronzeBadge = null,
+    int? SilverBadge = null,
+    int? GoldBadge = null,
+    int? SapphireBadge = null,
+    int? RubyBadge = null,
+    int? EmeraldBadge = null,
+    int? DiamondBadge = null,
+    int? TowerPerk1 = null,
+    int? TowerPerk2 = null,
+    int? TowerPerk3 = null,
+    int? TowerPerk4 = null,
+    int? TowerPerk5 = null,
+    int? TowerPerk6 = null,
+    int? TowerPerk7 = null,
+    int? TowerPerk8 = null,
+    int? TowerPerk9 = null,
+    int? TowerPerk10 = null,
+    int? TowerPerk11 = null,
+    int? TowerPerk12 = null
+);
