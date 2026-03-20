@@ -21,6 +21,7 @@ public class MutilsDbContext : DbContext {
     public DbSet<KakeraClaim> KakeraClaims => Set<KakeraClaim>();
     public DbSet<CalculatorConfig> CalculatorConfigs => Set<CalculatorConfig>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<WishlistEntry> WishlistEntries => Set<WishlistEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.Entity<User>(entity => {
@@ -177,6 +178,22 @@ public class MutilsDbContext : DbContext {
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WishlistEntry>(entity => {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.CharacterId);
+            entity.HasIndex(e => e.IsStarwish);
+            entity.HasAlternateKey(e => new { e.UserId, e.CharacterId });
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.WishlistEntries)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Character)
+                .WithMany(c => c.WishlistEntries)
+                .HasForeignKey(e => e.CharacterId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

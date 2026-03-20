@@ -10,6 +10,7 @@ import {
 	Pencil,
 	SignIn,
 	SortAscending,
+	Star,
 	Trash,
 	Upload,
 	X,
@@ -23,6 +24,7 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { memo, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ImportModal } from "@/components/collection/ImportModal";
 import { SeriesImportModal } from "@/components/collection/SeriesImportModal";
 import {
@@ -38,6 +40,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuSeparator,
+	ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
 	Dialog,
 	DialogContent,
@@ -70,7 +79,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import { collectionApi } from "@/lib/api";
+import { collectionApi, listsApi } from "@/lib/api";
 import type { CollectionEntry, CollectionExportRequest } from "@/types";
 
 export const Route = createFileRoute("/collection")({
@@ -92,10 +101,16 @@ const CharacterCard = memo(function CharacterCard({
 	entry,
 	onEdit,
 	onDelete,
+	onAddToWishlist,
+	onRemoveFromWishlist,
+	wishlistStatus,
 }: {
 	entry: CollectionEntry;
 	onEdit: (entry: CollectionEntry) => void;
 	onDelete: (entry: CollectionEntry) => void;
+	onAddToWishlist: (entry: CollectionEntry, isStarwish: boolean) => void;
+	onRemoveFromWishlist: (wishlistEntryId: string) => void;
+	wishlistStatus?: { id: string; type: "wish" | "starwish" } | null;
 }) {
 	const character = entry.character;
 	const keyColors: Record<string, string> = {
@@ -115,140 +130,215 @@ const CharacterCard = memo(function CharacterCard({
 	const isDisabled = entry.isDisabled;
 
 	return (
-		<div
-			className={`glass rounded-lg p-4 lantern-top hover:shadow-lg transition-all group relative ${isDisabled ? "ring-2 ring-destructive/50 bg-destructive/5" : ""}`}
-		>
-			{isDisabled && (
-				<Badge variant="destructive" className="absolute top-2 right-2 z-10">
-					Disabled
-				</Badge>
-			)}
-			<div className="aspect-square bg-muted rounded-md mb-3 flex items-center justify-center overflow-hidden relative">
-				{imageSrc ? (
-					<img
-						src={imageSrc}
-						alt={character.name}
-						className={`w-full h-full object-cover rounded-md group-hover:scale-105 transition-transform ${isDisabled ? "opacity-60" : ""}`}
-						loading="lazy"
-					/>
-				) : (
-					<span className="text-muted-foreground/70 text-4xl">?</span>
-				)}
-			</div>
-			<div className="flex items-start justify-between gap-2">
-				<h3
-					className={`font-semibold truncate ${isDisabled ? "text-destructive" : ""}`}
-					title={character.name}
+		<ContextMenu>
+			<ContextMenuTrigger asChild>
+				<div
+					className={`glass rounded-lg p-4 lantern-top hover:shadow-lg transition-all group relative ${isDisabled ? "ring-2 ring-destructive/50 bg-destructive/5" : ""}`}
 				>
-					{character.name}
-				</h3>
-				{character.keyType && (
-					<div className="flex items-center gap-0.5 shrink-0">
-						<Key
-							size={16}
-							className={
-								keyColors[character.keyType] || "text-muted-foreground/70"
-							}
-							weight="fill"
-						/>
-						{character.keyCount && (
-							<span
-								className={`text-xs ${keyColors[character.keyType] || "text-muted-foreground/70"}`}
-							>
-								×{character.keyCount}
-							</span>
-						)}
-					</div>
-				)}
-			</div>
-			{character.seriesName && (
-				<p
-					className="text-xs text-muted-foreground/70 truncate"
-					title={character.seriesName}
-				>
-					{character.seriesName}
-				</p>
-			)}
-			<div className="flex items-center justify-between mt-2 text-sm">
-				<span className="text-muted-foreground">#{character.rank ?? "?"}</span>
-				<div className="flex items-center gap-2">
-					{character.sp && (
-						<span className="text-info">
-							{character.sp.toLocaleString()} sp
-						</span>
+					{isDisabled && (
+						<Badge
+							variant="destructive"
+							className="absolute top-2 right-2 z-10"
+						>
+							Disabled
+						</Badge>
 					)}
-					<span className="text-primary">
-						{character.kakera?.toLocaleString() ?? "?"} ka
-					</span>
-				</div>
-			</div>
-			{character.claims !== null && (
-				<p className="text-xs text-muted-foreground/70 mt-1">
-					{character.claims} claims
-					{character.images !== null && ` · ${character.images} img`}
-					{character.gifs !== null && ` + ${character.gifs} gif`}
-				</p>
-			)}
-
-			{character.kakeraStats && character.kakeraStats.totalValue > 0 && (
-				<div className="relative mt-2 pt-2 border-t border-border/50">
-					<div className="flex items-center justify-between text-xs">
-						<span className="text-muted-foreground">User Kakera</span>
+					{wishlistStatus && (
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<span className="flex items-center gap-1 cursor-default hover:text-primary transition-colors font-bold text-primary">
-									<span>
-										{character.kakeraStats.totalValue.toLocaleString()}
-									</span>
-									<CaretDown size={12} weight="bold" className="opacity-50" />
-								</span>
-							</TooltipTrigger>
-							<TooltipContent side="top" className="glass p-2.5 min-w-[140px]">
-								<p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 border-b border-border/30 pb-1 font-bold text-center">
-									Breakdown
-								</p>
-								<div className="space-y-1">
-									{Object.entries(character.kakeraStats.byType).map(
-										([type, value]) => (
-											<div
-												key={type}
-												className="flex justify-between items-center gap-4"
-											>
-												<span className="capitalize text-[11px]">{type}</span>
-												<span className="font-mono text-primary font-bold text-[11px]">
-													{value.toLocaleString()}
-												</span>
-											</div>
-										),
-									)}
+								<div className="absolute top-2 left-2 z-10">
+									<Star
+										size={18}
+										weight={
+											wishlistStatus.type === "starwish" ? "fill" : "regular"
+										}
+										className={
+											wishlistStatus.type === "starwish"
+												? "text-warning"
+												: "text-muted-foreground"
+										}
+									/>
 								</div>
+							</TooltipTrigger>
+							<TooltipContent>
+								{wishlistStatus.type === "starwish" ? "Starwish" : "Wishlist"}
 							</TooltipContent>
 						</Tooltip>
+					)}
+					<div className="aspect-square bg-muted rounded-md mb-3 flex items-center justify-center overflow-hidden relative">
+						{imageSrc ? (
+							<img
+								src={imageSrc}
+								alt={character.name}
+								className={`w-full h-full object-cover rounded-md group-hover:scale-105 transition-transform ${isDisabled ? "opacity-60" : ""}`}
+								loading="lazy"
+							/>
+						) : (
+							<span className="text-muted-foreground/70 text-4xl">?</span>
+						)}
+					</div>
+					<div className="flex items-start justify-between gap-2">
+						<h3
+							className={`font-semibold truncate ${isDisabled ? "text-destructive" : ""}`}
+							title={character.name}
+						>
+							{character.name}
+						</h3>
+						{character.keyType && (
+							<div className="flex items-center gap-0.5 shrink-0">
+								<Key
+									size={16}
+									className={
+										keyColors[character.keyType] || "text-muted-foreground/70"
+									}
+									weight="fill"
+								/>
+								{character.keyCount && (
+									<span
+										className={`text-xs ${keyColors[character.keyType] || "text-muted-foreground/70"}`}
+									>
+										×{character.keyCount}
+									</span>
+								)}
+							</div>
+						)}
+					</div>
+					{character.seriesName && (
+						<p
+							className="text-xs text-muted-foreground/70 truncate"
+							title={character.seriesName}
+						>
+							{character.seriesName}
+						</p>
+					)}
+					<div className="flex items-center justify-between mt-2 text-sm">
+						<span className="text-muted-foreground">
+							#{character.rank ?? "?"}
+						</span>
+						<div className="flex items-center gap-2">
+							{character.sp && (
+								<span className="text-info">
+									{character.sp.toLocaleString()} sp
+								</span>
+							)}
+							<span className="text-primary">
+								{character.kakera?.toLocaleString() ?? "?"} ka
+							</span>
+						</div>
+					</div>
+					{character.claims !== null && (
+						<p className="text-xs text-muted-foreground/70 mt-1">
+							{character.claims} claims
+							{character.images !== null && ` · ${character.images} img`}
+							{character.gifs !== null && ` + ${character.gifs} gif`}
+						</p>
+					)}
+
+					{character.kakeraStats && character.kakeraStats.totalValue > 0 && (
+						<div className="relative mt-2 pt-2 border-t border-border/50">
+							<div className="flex items-center justify-between text-xs">
+								<span className="text-muted-foreground">User Kakera</span>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span className="flex items-center gap-1 cursor-default hover:text-primary transition-colors font-bold text-primary">
+											<span>
+												{character.kakeraStats.totalValue.toLocaleString()}
+											</span>
+											<CaretDown
+												size={12}
+												weight="bold"
+												className="opacity-50"
+											/>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent
+										side="top"
+										className="glass p-2.5 min-w-[140px]"
+									>
+										<p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 border-b border-border/30 pb-1 font-bold text-center">
+											Breakdown
+										</p>
+										<div className="space-y-1">
+											{Object.entries(character.kakeraStats.byType).map(
+												([type, value]) => (
+													<div
+														key={type}
+														className="flex justify-between items-center gap-4"
+													>
+														<span className="capitalize text-[11px]">
+															{type}
+														</span>
+														<span className="font-mono text-primary font-bold text-[11px]">
+															{value.toLocaleString()}
+														</span>
+													</div>
+												),
+											)}
+										</div>
+									</TooltipContent>
+								</Tooltip>
+							</div>
+						</div>
+					)}
+
+					<div className="flex gap-2 mt-3 pt-2 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => onEdit(entry)}
+							className="flex-1"
+						>
+							<Pencil size={14} />
+							Edit
+						</Button>
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={() => onDelete(entry)}
+							className="flex-1"
+						>
+							<Trash size={14} />
+							Remove
+						</Button>
 					</div>
 				</div>
-			)}
-
-			<div className="flex gap-2 mt-3 pt-2 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={() => onEdit(entry)}
-					className="flex-1"
-				>
-					<Pencil size={14} />
+			</ContextMenuTrigger>
+			<ContextMenuContent>
+				{wishlistStatus ? (
+					<ContextMenuItem
+						onClick={() => onRemoveFromWishlist(wishlistStatus.id)}
+						className="text-destructive focus:text-destructive"
+					>
+						<X size={14} className="mr-2" />
+						Remove from{" "}
+						{wishlistStatus.type === "starwish" ? "Starwish" : "Wishlist"}
+					</ContextMenuItem>
+				) : (
+					<>
+						<ContextMenuItem onClick={() => onAddToWishlist(entry, false)}>
+							<Star size={14} className="mr-2" />
+							Add to Wishlist
+						</ContextMenuItem>
+						<ContextMenuItem onClick={() => onAddToWishlist(entry, true)}>
+							<Star size={14} className="mr-2 text-warning" weight="fill" />
+							Add as Starwish
+						</ContextMenuItem>
+					</>
+				)}
+				<ContextMenuSeparator />
+				<ContextMenuItem onClick={() => onEdit(entry)}>
+					<Pencil size={14} className="mr-2" />
 					Edit
-				</Button>
-				<Button
-					variant="destructive"
-					size="sm"
+				</ContextMenuItem>
+				<ContextMenuItem
 					onClick={() => onDelete(entry)}
-					className="flex-1"
+					className="text-destructive focus:text-destructive"
 				>
-					<Trash size={14} />
+					<Trash size={14} className="mr-2" />
 					Remove
-				</Button>
-			</div>
-		</div>
+				</ContextMenuItem>
+			</ContextMenuContent>
+		</ContextMenu>
 	);
 });
 
@@ -704,6 +794,25 @@ function CollectionPage() {
 		},
 	});
 
+	const { data: wishlistData } = useQuery({
+		queryKey: ["wishlist-all"],
+		queryFn: () => listsApi.getWishlist({ pageSize: 1000 }),
+		enabled: isAuthenticated,
+	});
+
+	const wishlistMap = new Map<
+		string,
+		{ id: string; type: "wish" | "starwish" }
+	>();
+	if (wishlistData?.items) {
+		for (const entry of wishlistData.items) {
+			wishlistMap.set(entry.characterId, {
+				id: entry.id,
+				type: entry.isStarwish ? "starwish" : "wish",
+			});
+		}
+	}
+
 	const importMutation = useMutation({
 		mutationFn: ({
 			data,
@@ -762,6 +871,64 @@ function CollectionPage() {
 			queryClient.invalidateQueries({ queryKey: ["collection"] });
 		},
 	});
+
+	const addToWishlistMutation = useMutation({
+		mutationFn: ({
+			characterId,
+			isStarwish,
+		}: {
+			characterId: string;
+			isStarwish: boolean;
+		}) =>
+			listsApi.addToWishlist({
+				characterId,
+				isStarwish,
+			}),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+			queryClient.invalidateQueries({ queryKey: ["wishlist-all"] });
+			queryClient.invalidateQueries({ queryKey: ["wishlist-stats"] });
+		},
+	});
+
+	const removeFromWishlistMutation = useMutation({
+		mutationFn: (id: string) => listsApi.removeFromWishlist(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+			queryClient.invalidateQueries({ queryKey: ["wishlist-all"] });
+			queryClient.invalidateQueries({ queryKey: ["wishlist-stats"] });
+		},
+	});
+
+	const handleAddToWishlist = async (
+		entry: CollectionEntry,
+		isStarwish: boolean,
+	) => {
+		try {
+			await addToWishlistMutation.mutateAsync({
+				characterId: entry.character.id,
+				isStarwish,
+			});
+			toast.success(
+				`Added ${entry.character.name} to ${isStarwish ? "starwish" : "wishlist"}`,
+			);
+		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(error.message);
+			}
+		}
+	};
+
+	const handleRemoveFromWishlist = async (wishlistEntryId: string) => {
+		try {
+			await removeFromWishlistMutation.mutateAsync(wishlistEntryId);
+			toast.success("Removed from wishlist");
+		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(error.message);
+			}
+		}
+	};
 
 	const handleExport = async (request: CollectionExportRequest) => {
 		const data = await collectionApi.export(request);
@@ -1161,6 +1328,9 @@ function CollectionPage() {
 								entry={entry}
 								onEdit={setEditingEntry}
 								onDelete={setDeletingEntry}
+								onAddToWishlist={handleAddToWishlist}
+								onRemoveFromWishlist={handleRemoveFromWishlist}
+								wishlistStatus={wishlistMap.get(entry.character.id) ?? null}
 							/>
 						))}
 					</div>

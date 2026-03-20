@@ -344,3 +344,40 @@ export interface CollectionExportRequest {
 	limit?: number;
 	excludeDisabled?: boolean;
 }
+
+export interface WishlistEntry {
+	id: string;
+	characterId: string;
+	characterName: string;
+	rank: number | null;
+	kakera: number | null;
+	keyCount: number | null;
+	keyType: string | null;
+	seriesName: string | null;
+	imageUrl: string | null;
+	storedImageId: string | null;
+	isStarwish: boolean;
+	priority: number;
+	notes: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface WishlistStats {
+	totalCount: number;
+	starwishCount: number;
+	regularCount: number;
+}
+
+export interface CreateWishlistEntryRequest {
+	characterId: string;
+	isStarwish?: boolean;
+	priority?: number;
+	notes?: string;
+}
+
+export interface UpdateWishlistEntryRequest {
+	isStarwish?: boolean;
+	priority?: number;
+	notes?: string;
+}

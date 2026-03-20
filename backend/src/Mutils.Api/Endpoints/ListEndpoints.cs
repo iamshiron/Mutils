@@ -178,6 +178,184 @@ public static class ListEndpoints {
 
                 return Results.Ok(new ExportResponse(characters, 0));
             });
+
+        group.MapGet("/wishlist", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db,
+            bool? isStarwish,
+            string? search,
+            int page = 1,
+            int pageSize = 50) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var query = db.WishlistEntries
+                    .Include(w => w.Character)
+                        .ThenInclude(c => c!.Series)
+                    .Include(w => w.Character)
+                        .ThenInclude(c => c!.StoredImage)
+                    .Where(w => w.UserId == userId);
+
+                if (isStarwish.HasValue) {
+                    query = query.Where(w => w.IsStarwish == isStarwish.Value);
+                }
+
+                if (!string.IsNullOrEmpty(search)) {
+                    query = query.Where(w => w.Character!.Name.Contains(search) ||
+                        (w.Character!.Series != null && w.Character.Series.Name.Contains(search)));
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var entries = await query
+                    .OrderByDescending(w => w.IsStarwish)
+                    .ThenBy(w => w.Priority)
+                    .ThenBy(w => w.Character!.Rank ?? int.MaxValue)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(w => new WishlistEntryDto(
+                        w.Id,
+                        w.CharacterId,
+                        w.Character!.Name,
+                        w.Character.Rank,
+                        w.Character.Kakera,
+                        w.Character.KeyCount,
+                        w.Character.KeyType,
+                        w.Character.Series != null ? w.Character.Series.Name : null,
+                        w.Character.OriginalImageUrl,
+                        w.Character.StoredImageId,
+                        w.IsStarwish,
+                        w.Priority,
+                        w.Notes,
+                        w.CreatedAt,
+                        w.UpdatedAt
+                    ))
+                    .ToListAsync();
+
+                return Results.Ok(new {
+                    items = entries,
+                    total = totalCount,
+                    page,
+                    pageSize,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                });
+            });
+
+        group.MapGet("/wishlist/stats", async (
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var total = await db.WishlistEntries.CountAsync(w => w.UserId == userId);
+                var starwishCount = await db.WishlistEntries.CountAsync(w => w.UserId == userId && w.IsStarwish);
+
+                return Results.Ok(new WishlistStatsDto(total, starwishCount, total - starwishCount));
+            });
+
+        group.MapPost("/wishlist", async (
+            ClaimsPrincipal user,
+            CreateWishlistEntryRequest request,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var existing = await db.WishlistEntries
+                    .FirstOrDefaultAsync(w => w.UserId == userId && w.CharacterId == request.CharacterId);
+                if (existing is not null) {
+                    return Results.BadRequest("Character already in wishlist");
+                }
+
+                var character = await db.Characters.FindAsync(request.CharacterId);
+                if (character is null) return Results.NotFound("Character not found");
+
+                var entry = new Core.Entities.WishlistEntry {
+                    UserId = userId.Value,
+                    CharacterId = request.CharacterId,
+                    IsStarwish = request.IsStarwish,
+                    Priority = request.Priority,
+                    Notes = request.Notes
+                };
+
+                db.WishlistEntries.Add(entry);
+                await db.SaveChangesAsync();
+
+                var series = character.SeriesId.HasValue
+                    ? await db.Series.FindAsync(character.SeriesId)
+                    : null;
+
+                return Results.Created($"/api/lists/wishlist/{entry.Id}", new WishlistEntryDto(
+                    entry.Id,
+                    entry.CharacterId,
+                    character.Name,
+                    character.Rank,
+                    character.Kakera,
+                    character.KeyCount,
+                    character.KeyType,
+                    series?.Name,
+                    character.OriginalImageUrl,
+                    character.StoredImageId,
+                    entry.IsStarwish,
+                    entry.Priority,
+                    entry.Notes,
+                    entry.CreatedAt,
+                    entry.UpdatedAt
+                ));
+            });
+
+        group.MapPut("/wishlist/{id}", async (
+            Guid id,
+            ClaimsPrincipal user,
+            UpdateWishlistEntryRequest request,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var entry = await db.WishlistEntries
+                    .FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId);
+                if (entry is null) return Results.NotFound();
+
+                if (request.IsStarwish.HasValue) entry.IsStarwish = request.IsStarwish.Value;
+                if (request.Priority.HasValue) entry.Priority = request.Priority.Value;
+                if (request.Notes is not null) entry.Notes = request.Notes;
+
+                await db.SaveChangesAsync();
+                return Results.Ok(new { message = "Updated successfully" });
+            });
+
+        group.MapDelete("/wishlist/{id}", async (
+            Guid id,
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var entry = await db.WishlistEntries
+                    .FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId);
+                if (entry is null) return Results.NotFound();
+
+                db.WishlistEntries.Remove(entry);
+                await db.SaveChangesAsync();
+
+                return Results.NoContent();
+            });
+
+        group.MapPost("/wishlist/toggle-starwish/{id}", async (
+            Guid id,
+            ClaimsPrincipal user,
+            MutilsDbContext db) => {
+                var userId = GetUserId(user);
+                if (userId is null) return Results.Unauthorized();
+
+                var entry = await db.WishlistEntries
+                    .FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId);
+                if (entry is null) return Results.NotFound();
+
+                entry.IsStarwish = !entry.IsStarwish;
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { isStarwish = entry.IsStarwish });
+            });
     }
 
     private static Guid? GetUserId(ClaimsPrincipal user) {

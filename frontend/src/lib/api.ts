@@ -11,6 +11,7 @@ import type {
 	CollectionStats,
 	CreateCalculatorConfigRequest,
 	CreateKakeraClaimRequest,
+	CreateWishlistEntryRequest,
 	DisableList,
 	EnableList,
 	ImportResponse,
@@ -23,8 +24,11 @@ import type {
 	UpdateCalculatorConfigRequest,
 	UpdateKakeraClaimRequest,
 	UpdateProfileRequest,
+	UpdateWishlistEntryRequest,
 	User,
 	UserProfile,
+	WishlistEntry,
+	WishlistStats,
 } from "@/types";
 
 const api = axios.create({
@@ -234,6 +238,51 @@ export const listsApi = {
 			content: string;
 			characterCount: number;
 		}>("/lists/export", { listId, format });
+		return data;
+	},
+
+	getWishlist: async (params?: {
+		isStarwish?: boolean;
+		search?: string;
+		page?: number;
+		pageSize?: number;
+	}) => {
+		const { data } = await api.get<{
+			items: WishlistEntry[];
+			total: number;
+			page: number;
+			pageSize: number;
+			totalPages: number;
+		}>("/lists/wishlist", { params });
+		return data;
+	},
+
+	getWishlistStats: async () => {
+		const { data } = await api.get<WishlistStats>("/lists/wishlist/stats");
+		return data;
+	},
+
+	addToWishlist: async (request: CreateWishlistEntryRequest) => {
+		const { data } = await api.post<WishlistEntry>("/lists/wishlist", request);
+		return data;
+	},
+
+	updateWishlistEntry: async (
+		id: string,
+		request: UpdateWishlistEntryRequest,
+	) => {
+		const { data } = await api.put(`/lists/wishlist/${id}`, request);
+		return data;
+	},
+
+	removeFromWishlist: async (id: string) => {
+		await api.delete(`/lists/wishlist/${id}`);
+	},
+
+	toggleStarwish: async (id: string) => {
+		const { data } = await api.post<{ isStarwish: boolean }>(
+			`/lists/wishlist/toggle-starwish/${id}`,
+		);
 		return data;
 	},
 };

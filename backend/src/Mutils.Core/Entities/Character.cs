@@ -21,5 +21,6 @@ public sealed class Character : BaseEntity {
 
     public ICollection<CollectionEntry> CollectionEntries { get; set; } = [];
     public ICollection<BundleCharacterEntry> BundleEntries { get; set; } = [];
+    public ICollection<WishlistEntry> WishlistEntries { get; set; } = [];
     public Series? Series { get; set; }
 }
