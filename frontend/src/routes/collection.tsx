@@ -280,27 +280,6 @@ const CharacterCard = memo(function CharacterCard({
 							</div>
 						</div>
 					)}
-
-					<div className="flex gap-2 mt-3 pt-2 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => onEdit(entry)}
-							className="flex-1"
-						>
-							<Pencil size={14} />
-							Edit
-						</Button>
-						<Button
-							variant="destructive"
-							size="sm"
-							onClick={() => onDelete(entry)}
-							className="flex-1"
-						>
-							<Trash size={14} />
-							Remove
-						</Button>
-					</div>
 				</div>
 			</ContextMenuTrigger>
 			<ContextMenuContent>
