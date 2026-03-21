@@ -537,6 +537,11 @@ function CalculatorPage() {
 						mult={results.starwishMult.toFixed(2)}
 						subtext={`(+${results.badgeBonus}% from Badges)`}
 						hitsPerHour={results.expectedStarwishHits}
+						hoursToHit={
+							results.expectedStarwishHits > 0
+								? 1 / results.expectedStarwishHits
+								: Infinity
+						}
 						variant="warning"
 					/>
 
@@ -546,6 +551,11 @@ function CalculatorPage() {
 						odds={formatOdds(results.wishProb)}
 						mult={results.regWishMult.toFixed(2)}
 						hitsPerHour={results.expectedWishHits}
+						hoursToHit={
+							results.expectedWishHits > 0
+								? 1 / results.expectedWishHits
+								: Infinity
+						}
 						variant="default"
 					/>
 
@@ -905,7 +915,26 @@ interface ResultCardProps {
 	subtext?: string;
 	icon?: React.ReactNode;
 	hitsPerHour?: number;
+	hoursToHit?: number;
 	variant?: "primary" | "warning" | "success" | "info" | "default";
+}
+
+function formatHoursToHit(hours: number): string {
+	if (hours < 1) {
+		return `${Math.round(hours * 60)} min`;
+	}
+	if (hours < 24) {
+		return `${hours.toFixed(1)}h`;
+	}
+	const days = hours / 24;
+	if (days < 30) {
+		return `${days.toFixed(1)} days`;
+	}
+	const months = days / 30;
+	if (months < 12) {
+		return `${months.toFixed(1)} months`;
+	}
+	return `${(months / 12).toFixed(1)} years`;
 }
 
 function ResultCard({
@@ -917,6 +946,7 @@ function ResultCard({
 	subtext,
 	icon,
 	hitsPerHour,
+	hoursToHit,
 	variant = "default",
 }: ResultCardProps) {
 	const variantStyles = {
@@ -964,13 +994,21 @@ function ResultCard({
 					</p>
 				)}
 				{percent && (
-					<div className="mt-2 flex items-baseline gap-2">
+					<div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
 						<p className={`text-3xl font-bold ${textStyles[variant]}`}>
 							{percent}
 						</p>
+						{odds && (
+							<Badge
+								variant="outline"
+								className="font-mono text-sm px-3 py-1 h-auto"
+							>
+								{odds}
+							</Badge>
+						)}
 					</div>
 				)}
-				{odds && (
+				{!percent && odds && (
 					<Badge
 						variant="outline"
 						className="mt-1 font-mono text-sm px-3 py-1 h-auto"
@@ -978,13 +1016,19 @@ function ResultCard({
 						{odds}
 					</Badge>
 				)}
+				{hoursToHit !== undefined &&
+					hoursToHit > 0 &&
+					hoursToHit < Infinity && (
+						<p className="text-sm text-muted-foreground mt-2">
+							Avg. time to hit:{" "}
+							<span className="text-foreground font-medium">
+								{formatHoursToHit(hoursToHit)}
+							</span>
+						</p>
+					)}
 				{hitsPerHour !== undefined && hitsPerHour > 0 && (
-					<p className="text-sm text-muted-foreground mt-2">
-						~
-						<span className="text-foreground font-medium">
-							{hitsPerHour.toFixed(5)}
-						</span>{" "}
-						hits/hour
+					<p className="text-xs text-muted-foreground/70">
+						(~{hitsPerHour.toFixed(5)} hits/hour)
 					</p>
 				)}
 				{mult && subtext && (
