@@ -26,6 +26,14 @@ public record UserProfileDto(
     int AntiDisabled,
     int TotalRolls,
     int BwRollsInvested,
+    int KakeraPerFloor,
+    int BronzeBadgePrice,
+    int SilverBadgePrice,
+    int GoldBadgePrice,
+    int SapphireBadgePrice,
+    int RubyBadgePrice,
+    int EmeraldBadgePrice,
+    int DiamondBadgePrice,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );
@@ -54,5 +62,13 @@ public record UpdateProfileRequest(
     int? DisabledLimit = null,
     int? AntiDisabled = null,
     int? TotalRolls = null,
-    int? BwRollsInvested = null
+    int? BwRollsInvested = null,
+    int? KakeraPerFloor = null,
+    int? BronzeBadgePrice = null,
+    int? SilverBadgePrice = null,
+    int? GoldBadgePrice = null,
+    int? SapphireBadgePrice = null,
+    int? RubyBadgePrice = null,
+    int? EmeraldBadgePrice = null,
+    int? DiamondBadgePrice = null
 );

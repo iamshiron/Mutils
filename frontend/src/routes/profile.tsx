@@ -2,6 +2,7 @@ import {
 	CastleTurretIcon,
 	DiceFiveIcon,
 	FloppyDiskIcon,
+	GearIcon,
 	MedalIcon,
 	WarningIcon,
 } from "@phosphor-icons/react";
@@ -128,8 +129,23 @@ const ROLL_SETTINGS = [
 	},
 ] as const;
 
-function calculateTowerInvestment(totalFloors: number): number {
-	return (5000 * totalFloors * (totalFloors + 1)) / 2;
+const DEFAULT_KAKERA_PER_FLOOR = 5000;
+
+const BADGE_PRICES = [
+	{ key: "bronzeBadgePrice", label: "Bronze", default: 1000 },
+	{ key: "silverBadgePrice", label: "Silver", default: 2000 },
+	{ key: "goldBadgePrice", label: "Gold", default: 3000 },
+	{ key: "sapphireBadgePrice", label: "Sapphire", default: 5000 },
+	{ key: "rubyBadgePrice", label: "Ruby", default: 7000 },
+	{ key: "emeraldBadgePrice", label: "Emerald", default: 9000 },
+	{ key: "diamondBadgePrice", label: "Diamond", default: 12000 },
+] as const;
+
+function calculateTowerInvestment(
+	totalFloors: number,
+	kakeraPerFloor: number,
+): number {
+	return (kakeraPerFloor * totalFloors * (totalFloors + 1)) / 2;
 }
 
 function getTotalTowerFloors(
@@ -168,7 +184,9 @@ function validateTowerLevels(getValue: (key: ProfileFieldKey) => number): {
 type ProfileFieldKey =
 	| (typeof BADGES)[number]["key"]
 	| (typeof TOWER_PERKS)[number]["key"]
-	| (typeof ROLL_SETTINGS)[number]["key"];
+	| (typeof ROLL_SETTINGS)[number]["key"]
+	| "kakeraPerFloor"
+	| (typeof BADGE_PRICES)[number]["key"];
 
 function LevelSelect({
 	value,
@@ -215,7 +233,14 @@ function ProfilePage() {
 	const getValue = useCallback(
 		(key: ProfileFieldKey): number => {
 			if (key in localEdits) return localEdits[key]!;
-			return (serverProfile?.[key as keyof UserProfile] as number) ?? 0;
+			const serverValue = serverProfile?.[key as keyof UserProfile] as
+				| number
+				| undefined;
+			if (serverValue !== undefined && serverValue !== 0) return serverValue;
+			if (key === "kakeraPerFloor") return DEFAULT_KAKERA_PER_FLOOR;
+			const badgePrice = BADGE_PRICES.find((b) => b.key === key);
+			if (badgePrice) return badgePrice.default;
+			return serverValue ?? 0;
 		},
 		[localEdits, serverProfile],
 	);
@@ -312,6 +337,7 @@ function ProfilePage() {
 							<p className="text-lg font-semibold">
 								{calculateTowerInvestment(
 									getTotalTowerFloors(getValue),
+									getValue("kakeraPerFloor"),
 								).toLocaleString()}
 							</p>
 						</div>
@@ -409,6 +435,67 @@ function ProfilePage() {
 								/>
 							</div>
 						))}
+					</div>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<GearIcon className="h-5 w-5" />
+						Server Settings
+					</CardTitle>
+					<CardDescription>
+						Configure server-specific kakera values for calculations
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						<div className="flex items-center justify-between gap-4 rounded-md border p-3">
+							<div className="flex-1 min-w-0">
+								<Label className="font-medium">Kakera per Floor</Label>
+								<p className="text-xs text-muted-foreground mt-0.5">
+									Cost per tower floor level
+								</p>
+							</div>
+							<Input
+								type="number"
+								min={0}
+								value={getValue("kakeraPerFloor")}
+								onChange={(e) =>
+									updateField(
+										"kakeraPerFloor",
+										parseInt(e.target.value, 10) || 0,
+									)
+								}
+								className="w-32"
+							/>
+						</div>
+						<div className="pt-2">
+							<Label className="font-medium mb-3 block">Badge Prices</Label>
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+								{BADGE_PRICES.map((badge) => (
+									<div
+										key={badge.key}
+										className="flex items-center justify-between gap-3 rounded-md border p-3"
+									>
+										<Label className="font-medium">{badge.label}</Label>
+										<Input
+											type="number"
+											min={0}
+											value={getValue(badge.key)}
+											onChange={(e) =>
+												updateField(
+													badge.key,
+													parseInt(e.target.value, 10) || 0,
+												)
+											}
+											className="w-28"
+										/>
+									</div>
+								))}
+							</div>
+						</div>
 					</div>
 				</CardContent>
 			</Card>

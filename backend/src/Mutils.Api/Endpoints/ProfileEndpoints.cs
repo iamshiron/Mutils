@@ -67,6 +67,14 @@ public static class ProfileEndpoints {
                 if (request.AntiDisabled.HasValue) profile.AntiDisabled = request.AntiDisabled.Value;
                 if (request.TotalRolls.HasValue) profile.TotalRolls = request.TotalRolls.Value;
                 if (request.BwRollsInvested.HasValue) profile.BwRollsInvested = request.BwRollsInvested.Value;
+                if (request.KakeraPerFloor.HasValue) profile.KakeraPerFloor = request.KakeraPerFloor.Value;
+                if (request.BronzeBadgePrice.HasValue) profile.BronzeBadgePrice = request.BronzeBadgePrice.Value;
+                if (request.SilverBadgePrice.HasValue) profile.SilverBadgePrice = request.SilverBadgePrice.Value;
+                if (request.GoldBadgePrice.HasValue) profile.GoldBadgePrice = request.GoldBadgePrice.Value;
+                if (request.SapphireBadgePrice.HasValue) profile.SapphireBadgePrice = request.SapphireBadgePrice.Value;
+                if (request.RubyBadgePrice.HasValue) profile.RubyBadgePrice = request.RubyBadgePrice.Value;
+                if (request.EmeraldBadgePrice.HasValue) profile.EmeraldBadgePrice = request.EmeraldBadgePrice.Value;
+                if (request.DiamondBadgePrice.HasValue) profile.DiamondBadgePrice = request.DiamondBadgePrice.Value;
 
                 await db.SaveChangesAsync();
                 return Results.Ok(ToDto(profile));
@@ -82,6 +90,9 @@ public static class ProfileEndpoints {
         p.TowerPerk9, p.TowerPerk10, p.TowerPerk11, p.TowerPerk12,
         p.TotalPool, p.DisabledLimit, p.AntiDisabled,
         p.TotalRolls, p.BwRollsInvested,
+        p.KakeraPerFloor, p.BronzeBadgePrice, p.SilverBadgePrice,
+        p.GoldBadgePrice, p.SapphireBadgePrice, p.RubyBadgePrice,
+        p.EmeraldBadgePrice, p.DiamondBadgePrice,
         p.CreatedAt, p.UpdatedAt
     );
 

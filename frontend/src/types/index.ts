@@ -275,6 +275,14 @@ export interface UserProfile {
 	antiDisabled: number;
 	totalRolls: number;
 	bwRollsInvested: number;
+	kakeraPerFloor: number;
+	bronzeBadgePrice: number;
+	silverBadgePrice: number;
+	goldBadgePrice: number;
+	sapphireBadgePrice: number;
+	rubyBadgePrice: number;
+	emeraldBadgePrice: number;
+	diamondBadgePrice: number;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -304,6 +312,14 @@ export interface UpdateProfileRequest {
 	antiDisabled?: number;
 	totalRolls?: number;
 	bwRollsInvested?: number;
+	kakeraPerFloor?: number;
+	bronzeBadgePrice?: number;
+	silverBadgePrice?: number;
+	goldBadgePrice?: number;
+	sapphireBadgePrice?: number;
+	rubyBadgePrice?: number;
+	emeraldBadgePrice?: number;
+	diamondBadgePrice?: number;
 }
 
 export interface BulkKakeraImportRequest {

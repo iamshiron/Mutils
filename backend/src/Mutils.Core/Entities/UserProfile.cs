@@ -33,4 +33,14 @@ public sealed class UserProfile : BaseEntity {
     public int AntiDisabled { get; set; }
     public int TotalRolls { get; set; }
     public int BwRollsInvested { get; set; }
+
+    // Server Settings
+    public int KakeraPerFloor { get; set; } = 5000;
+    public int BronzeBadgePrice { get; set; } = 1000;
+    public int SilverBadgePrice { get; set; } = 2000;
+    public int GoldBadgePrice { get; set; } = 3000;
+    public int SapphireBadgePrice { get; set; } = 5000;
+    public int RubyBadgePrice { get; set; } = 7000;
+    public int EmeraldBadgePrice { get; set; } = 9000;
+    public int DiamondBadgePrice { get; set; } = 12000;
 }
