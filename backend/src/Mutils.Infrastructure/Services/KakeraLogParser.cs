@@ -60,18 +60,14 @@ public partial class KakeraLogParser : IKakeraLogParser {
             var yesterdayMatch = YesterdayRegex().Match(trimmed);
             if (yesterdayMatch.Success) {
                 var timeStr = yesterdayMatch.Groups["time"].Value;
-                if (DateTime.TryParseExact(
-                    timeStr,
-                    "h:mm tt",
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out var parsedTime)) {
-                    var yesterday = DateTime.UtcNow.Date.AddDays(-1);
-                    currentDate = new DateTime(
-                        yesterday.Year, yesterday.Month, yesterday.Day,
-                        parsedTime.Hour, parsedTime.Minute, 0,
-                        DateTimeKind.Utc);
-                }
+                currentDate = ParseTimeWithHourOnly(timeStr, DateTime.UtcNow.Date.AddDays(-1));
+                continue;
+            }
+
+            var todayTimeMatch = TodayTimeRegex().Match(trimmed);
+            if (todayTimeMatch.Success) {
+                var timeStr = todayTimeMatch.Groups["time"].Value;
+                currentDate = ParseTimeWithHourOnly(timeStr, DateTime.UtcNow.Date);
                 continue;
             }
 
@@ -123,6 +119,18 @@ public partial class KakeraLogParser : IKakeraLogParser {
         return new ParsedKakeraClaim(kakeraType, value2, currentDate);
     }
 
+    private static DateTime? ParseTimeWithHourOnly(string timeStr, DateTime dateBase) {
+        string[] formats = ["H:mm", "h:mm tt", "h:mmtt"];
+        foreach (var format in formats) {
+            if (DateTime.TryParseExact(timeStr.Trim(), format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedTime)) {
+                return DateTime.SpecifyKind(
+                    new DateTime(dateBase.Year, dateBase.Month, dateBase.Day, parsedTime.Hour, parsedTime.Minute, 0),
+                    DateTimeKind.Utc);
+            }
+        }
+        return null;
+    }
+
     [GeneratedRegex(
         @"\d{1,2}/\d{1,2}/\d{4}\s+\d{1,2}:\d{2}\s+(?:AM|PM)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]
@@ -134,9 +142,14 @@ public partial class KakeraLogParser : IKakeraLogParser {
     private static partial Regex IsoDateLineRegex();
 
     [GeneratedRegex(
-        @"Yesterday\s+at\s+(?<time>\d{1,2}:\d{2}\s+(?:AM|PM))",
+        @"Yesterday\s+at\s+(?<time>\d{1,2}:\d{2})(?:\s+(?:AM|PM))?",
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex YesterdayRegex();
+
+    [GeneratedRegex(
+        @"^—\s*(?<time>\d{1,2}:\d{2})$",
+        RegexOptions.Compiled)]
+    private static partial Regex TodayTimeRegex();
 
     [GeneratedRegex(
         @":kakeraL:breaks down into.*=>\s*\w+\s*\+\s*(?<value>[\d,]+)",
