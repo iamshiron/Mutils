@@ -1,15 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Mutils.Infrastructure.Migrations
-{
+namespace Mutils.Infrastructure.Migrations {
     /// <inheritdoc />
-    public partial class AddRollCalculatorFieldsToProfile : Migration
-    {
+    public partial class AddRollCalculatorFieldsToProfile : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.AddColumn<int>(
                 name: "BwRollsInvested",
                 table: "UserProfiles",
@@ -40,8 +37,7 @@ namespace Mutils.Infrastructure.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropColumn(
                 name: "BwRollsInvested",
                 table: "UserProfiles");

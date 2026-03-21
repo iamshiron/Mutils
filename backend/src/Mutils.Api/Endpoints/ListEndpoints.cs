@@ -237,7 +237,7 @@ public static class ListEndpoints {
                     total = totalCount,
                     page,
                     pageSize,
-                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                    totalPages = (int) Math.Ceiling(totalCount / (double) pageSize)
                 });
             });
 

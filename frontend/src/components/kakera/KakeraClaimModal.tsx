@@ -125,7 +125,12 @@ export function KakeraClaimModal({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+		<Dialog
+			open={isOpen}
+			onOpenChange={(open) => {
+				if (!open) handleClose();
+			}}
+		>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>
@@ -217,10 +222,7 @@ export function KakeraClaimModal({
 					<Button variant="outline" onClick={handleClose}>
 						Cancel
 					</Button>
-					<Button
-						onClick={handleSubmit}
-						disabled={isLoading || value <= 0}
-					>
+					<Button onClick={handleSubmit} disabled={isLoading || value <= 0}>
 						{isLoading
 							? "Saving..."
 							: isEditMode
