@@ -3,6 +3,7 @@ import {
 	DiceFiveIcon,
 	FloppyDiskIcon,
 	MedalIcon,
+	WarningIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -135,6 +136,33 @@ function getTotalTowerFloors(
 	getValue: (key: ProfileFieldKey) => number,
 ): number {
 	return TOWER_PERKS.reduce((sum, perk) => sum + getValue(perk.key), 0);
+}
+
+function validateTowerLevels(getValue: (key: ProfileFieldKey) => number): {
+	isValid: boolean;
+	issues: { perkId: number; current: number; required: number }[];
+} {
+	const levels = TOWER_PERKS.map((perk) => ({
+		id: perk.id,
+		level: getValue(perk.key),
+	}));
+	const maxLevel = Math.max(...levels.map((l) => l.level));
+
+	if (maxLevel === 0) return { isValid: true, issues: [] };
+
+	const issues: { perkId: number; current: number; required: number }[] = [];
+
+	for (const perk of levels) {
+		if (perk.level < maxLevel - 1) {
+			issues.push({
+				perkId: perk.id,
+				current: perk.level,
+				required: maxLevel - 1,
+			});
+		}
+	}
+
+	return { isValid: issues.length === 0, issues };
 }
 
 type ProfileFieldKey =
@@ -290,6 +318,40 @@ function ProfilePage() {
 					</div>
 				</CardHeader>
 				<CardContent>
+					{(() => {
+						const validation = validateTowerLevels(getValue);
+						if (!validation.isValid) {
+							const maxLevel = Math.max(
+								...TOWER_PERKS.map((p) => getValue(p.key)),
+							);
+							return (
+								<div className="mb-4 rounded-md border border-yellow-500/50 bg-yellow-500/10 p-3">
+									<div className="flex items-start gap-2">
+										<WarningIcon className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+										<div>
+											<p className="font-medium text-yellow-500">
+												Invalid Tower Configuration
+											</p>
+											<p className="text-sm text-muted-foreground mt-1">
+												Each perk must be at least level {maxLevel - 1} before
+												any perk can reach level {maxLevel}.
+											</p>
+											<p className="text-sm text-muted-foreground mt-1">
+												Behind:{" "}
+												{validation.issues
+													.map(
+														(i) =>
+															`Perk ${i.perkId} (L${i.current} → L${i.required})`,
+													)
+													.join(", ")}
+											</p>
+										</div>
+									</div>
+								</div>
+							);
+						}
+						return null;
+					})()}
 					<div className="space-y-3">
 						{TOWER_PERKS.map((perk) => (
 							<div
