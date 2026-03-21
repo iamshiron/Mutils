@@ -28,7 +28,9 @@ function DashboardPage() {
 				</Card>
 				<Card className="glass lantern-top">
 					<CardContent className="pt-6">
-						<h3 className="text-muted-foreground text-sm mb-1">Unique Series</h3>
+						<h3 className="text-muted-foreground text-sm mb-1">
+							Unique Series
+						</h3>
 						<p className="text-3xl font-bold text-primary">0</p>
 					</CardContent>
 				</Card>
@@ -38,7 +40,11 @@ function DashboardPage() {
 				<CardContent className="pt-6">
 					<h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						<Button asChild variant="ghost" className="h-auto p-4 justify-start hover:bg-primary/10">
+						<Button
+							asChild
+							variant="ghost"
+							className="h-auto p-4 justify-start hover:bg-primary/10"
+						>
 							<Link to="/collection" className="flex flex-col items-start">
 								<span className="font-medium">Import Collection</span>
 								<p className="text-sm text-muted-foreground">
@@ -46,7 +52,11 @@ function DashboardPage() {
 								</p>
 							</Link>
 						</Button>
-						<Button asChild variant="ghost" className="h-auto p-4 justify-start hover:bg-primary/10">
+						<Button
+							asChild
+							variant="ghost"
+							className="h-auto p-4 justify-start hover:bg-primary/10"
+						>
 							<Link to="/lists" className="flex flex-col items-start">
 								<span className="font-medium">Create List</span>
 								<p className="text-sm text-muted-foreground">

@@ -26,7 +26,12 @@ declare module "@tanstack/react-router" {
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
-		<ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+		<ThemeProvider
+			attribute="class"
+			defaultTheme="dark"
+			enableSystem
+			disableTransitionOnChange
+		>
 			<QueryClientProvider client={queryClient}>
 				<RouterProvider router={router} />
 				<ReactQueryDevtools buttonPosition="bottom-right" />

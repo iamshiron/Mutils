@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_serena_serena__list_dir",
+      "mcp__plugin_serena_serena__activate_project",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(for file:*)",
+      "Bash(do echo:*)",
+      "Bash(find /e/dev/Mutils/backend/src -type f -name *.cs)",
+      "Bash(dotnet build:*)",
+      "Bash(find /e/dev/Mutils/frontend -name *.css -o -name globals.css)",
+      "Bash(find /e/dev/Mutils -maxdepth 2 -type f -name *.mod -o -name *.json -o -name *.yaml -o -name *.yml)",
+      "Bash(cat /e/dev/Mutils/backend/src/Mutils.Core/DTOs/*.cs)",
+      "Bash(grep -r -i \"profile\\\\|badge\\\\|tower\" /e/dev/Mutils/backend/src --include=*.cs)",
+      "Bash(dotnet ef:*)",
+      "Bash(taskkill:*)",
+      "mcp__plugin_serena_serena__find_file",
+      "mcp__plugin_serena_serena__read_file"
+    ]
+  }
+}

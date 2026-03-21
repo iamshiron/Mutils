@@ -329,7 +329,7 @@ public class KakeraLogParserTests {
         result[0].ClaimedAt!.Value.Day.Should().Be(11);
         result[0].ClaimedAt!.Value.Hour.Should().Be(19);
         result[0].ClaimedAt!.Value.Minute.Should().Be(8);
-        
+
         result[1].Type.Should().Be(KakeraType.Teal);
         result[1].Value.Should().Be(218);
         result[1].ClaimedAt.Should().NotBeNull();
