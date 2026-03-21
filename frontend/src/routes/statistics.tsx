@@ -171,6 +171,9 @@ function StatisticsPage() {
 		predictions: { day: number; dailyIncome: number; cumulative: number }[];
 	} | null>(null);
 	const [isCalculating, setIsCalculating] = useState(false);
+	const [avgPerTypeSort, setAvgPerTypeSort] = useState<
+		"default" | "average" | "count" | "value" | "chance"
+	>("default");
 	const queryClient = useQueryClient();
 
 	const { data: claims, isLoading: claimsLoading } = useQuery({
@@ -947,6 +950,128 @@ function StatisticsPage() {
 									</span>
 								</div>
 							))}
+						</div>
+					</CardContent>
+				</Card>
+
+				{/* Average per Type */}
+				<Card className="glass">
+					<CardHeader>
+						<div className="flex items-center justify-between w-full">
+							<CardTitle className="flex items-center gap-2">
+								<GaugeIcon size={20} /> Average per Type ({config.label})
+							</CardTitle>
+							<Select
+								value={avgPerTypeSort}
+								onValueChange={(v) =>
+									setAvgPerTypeSort(v as typeof avgPerTypeSort)
+								}
+							>
+								<SelectTrigger className="w-40 h-8 text-xs">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="default">Default Order</SelectItem>
+									<SelectItem value="average">By Average (High→Low)</SelectItem>
+									<SelectItem value="count">By Count (High→Low)</SelectItem>
+									<SelectItem value="value">By Total (High→Low)</SelectItem>
+									<SelectItem value="chance">By Chance (High→Low)</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className="overflow-x-auto">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Type</TableHead>
+										<TableHead className="text-right">Count</TableHead>
+										<TableHead className="text-right">Chance</TableHead>
+										<TableHead className="text-right">Total Value</TableHead>
+										<TableHead className="text-right">Average</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{(() => {
+										const typeOrder = [
+											"chaos",
+											"dark",
+											"light",
+											"rainbow",
+											"red",
+											"orange",
+											"yellow",
+											"green",
+											"teal",
+											"blue",
+											"purple",
+										] as const;
+										const totalClaims = filteredClaims.length;
+										const orderedData = typeOrder
+											.map((type) => pieData.find((d) => d.type === type))
+											.filter(
+												(entry): entry is NonNullable<typeof entry> => !!entry,
+											);
+
+										const sortedData = (() => {
+											switch (avgPerTypeSort) {
+												case "average":
+													return [...orderedData].sort(
+														(a, b) => b.value / b.count - a.value / a.count,
+													);
+												case "count":
+													return [...orderedData].sort(
+														(a, b) => b.count - a.count,
+													);
+												case "value":
+													return [...orderedData].sort(
+														(a, b) => b.value - a.value,
+													);
+												case "chance":
+													return [...orderedData].sort(
+														(a, b) => b.count - a.count,
+													);
+												default:
+													return orderedData;
+											}
+										})();
+
+										return sortedData.map((entry) => (
+											<TableRow key={entry.type}>
+												<TableCell>
+													<div className="flex items-center gap-2">
+														<div
+															className="w-3 h-3 rounded-full"
+															style={{
+																backgroundColor: getKakeraColor(entry.type),
+															}}
+														/>
+														<span className="capitalize">{entry.name}</span>
+													</div>
+												</TableCell>
+												<TableCell className="text-right font-mono">
+													{entry.count.toLocaleString()}
+												</TableCell>
+												<TableCell className="text-right font-mono text-muted-foreground">
+													{totalClaims > 0
+														? ((entry.count / totalClaims) * 100).toFixed(1)
+														: 0}
+													%
+												</TableCell>
+												<TableCell className="text-right font-mono text-primary">
+													{entry.value.toLocaleString()}
+												</TableCell>
+												<TableCell className="text-right font-mono font-semibold text-success">
+													{Math.round(
+														entry.value / entry.count,
+													).toLocaleString()}
+												</TableCell>
+											</TableRow>
+										));
+									})()}
+								</TableBody>
+							</Table>
 						</div>
 					</CardContent>
 				</Card>
