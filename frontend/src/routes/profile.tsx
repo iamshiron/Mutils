@@ -127,6 +127,16 @@ const ROLL_SETTINGS = [
 	},
 ] as const;
 
+function calculateTowerInvestment(totalFloors: number): number {
+	return (5000 * totalFloors * (totalFloors + 1)) / 2;
+}
+
+function getTotalTowerFloors(
+	getValue: (key: ProfileFieldKey) => number,
+): number {
+	return TOWER_PERKS.reduce((sum, perk) => sum + getValue(perk.key), 0);
+}
+
 type ProfileFieldKey =
 	| (typeof BADGES)[number]["key"]
 	| (typeof TOWER_PERKS)[number]["key"]
@@ -188,8 +198,8 @@ function ProfilePage() {
 
 	const saveMutation = useMutation({
 		mutationFn: (request: UpdateProfileRequest) => profileApi.update(request),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["profile"] });
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["profile"] });
 			toast.success("Profile saved");
 		},
 		onError: () => {
@@ -257,13 +267,27 @@ function ProfilePage() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<CastleTurretIcon className="h-5 w-5" />
-						Tower Perks
-					</CardTitle>
-					<CardDescription>
-						Set your current tower perk levels (0–5)
-					</CardDescription>
+					<div className="flex items-center justify-between">
+						<div>
+							<CardTitle className="flex items-center gap-2">
+								<CastleTurretIcon className="h-5 w-5" />
+								Tower Perks
+							</CardTitle>
+							<CardDescription>
+								Set your current tower perk levels (0–5)
+							</CardDescription>
+						</div>
+						<div className="text-right">
+							<span className="text-xs text-muted-foreground">
+								Total Kakera Invested
+							</span>
+							<p className="text-lg font-semibold">
+								{calculateTowerInvestment(
+									getTotalTowerFloors(getValue),
+								).toLocaleString()}
+							</p>
+						</div>
+					</div>
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-3">
@@ -317,7 +341,7 @@ function ProfilePage() {
 									min={0}
 									value={getValue(setting.key)}
 									onChange={(e) =>
-										updateField(setting.key, parseInt(e.target.value) || 0)
+										updateField(setting.key, parseInt(e.target.value, 10) || 0)
 									}
 									className="w-32"
 								/>
