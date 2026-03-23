@@ -12,8 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatisticsRouteImport } from './routes/statistics'
 import { Route as RollsRouteImport } from './routes/rolls'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as OptimizerRouteImport } from './routes/optimizer'
-import { Route as ListsRouteImport } from './routes/lists'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CollectionRouteImport } from './routes/collection'
 import { Route as CalculatorRouteImport } from './routes/calculator'
@@ -33,16 +31,6 @@ const RollsRoute = RollsRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OptimizerRoute = OptimizerRouteImport.update({
-  id: '/optimizer',
-  path: '/optimizer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ListsRoute = ListsRouteImport.update({
-  id: '/lists',
-  path: '/lists',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -76,8 +64,6 @@ export interface FileRoutesByFullPath {
   '/calculator': typeof CalculatorRoute
   '/collection': typeof CollectionRoute
   '/dashboard': typeof DashboardRoute
-  '/lists': typeof ListsRoute
-  '/optimizer': typeof OptimizerRoute
   '/profile': typeof ProfileRoute
   '/rolls': typeof RollsRoute
   '/statistics': typeof StatisticsRoute
@@ -88,8 +74,6 @@ export interface FileRoutesByTo {
   '/calculator': typeof CalculatorRoute
   '/collection': typeof CollectionRoute
   '/dashboard': typeof DashboardRoute
-  '/lists': typeof ListsRoute
-  '/optimizer': typeof OptimizerRoute
   '/profile': typeof ProfileRoute
   '/rolls': typeof RollsRoute
   '/statistics': typeof StatisticsRoute
@@ -101,8 +85,6 @@ export interface FileRoutesById {
   '/calculator': typeof CalculatorRoute
   '/collection': typeof CollectionRoute
   '/dashboard': typeof DashboardRoute
-  '/lists': typeof ListsRoute
-  '/optimizer': typeof OptimizerRoute
   '/profile': typeof ProfileRoute
   '/rolls': typeof RollsRoute
   '/statistics': typeof StatisticsRoute
@@ -115,8 +97,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/collection'
     | '/dashboard'
-    | '/lists'
-    | '/optimizer'
     | '/profile'
     | '/rolls'
     | '/statistics'
@@ -127,8 +107,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/collection'
     | '/dashboard'
-    | '/lists'
-    | '/optimizer'
     | '/profile'
     | '/rolls'
     | '/statistics'
@@ -139,8 +117,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/collection'
     | '/dashboard'
-    | '/lists'
-    | '/optimizer'
     | '/profile'
     | '/rolls'
     | '/statistics'
@@ -152,8 +128,6 @@ export interface RootRouteChildren {
   CalculatorRoute: typeof CalculatorRoute
   CollectionRoute: typeof CollectionRoute
   DashboardRoute: typeof DashboardRoute
-  ListsRoute: typeof ListsRoute
-  OptimizerRoute: typeof OptimizerRoute
   ProfileRoute: typeof ProfileRoute
   RollsRoute: typeof RollsRoute
   StatisticsRoute: typeof StatisticsRoute
@@ -181,20 +155,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/optimizer': {
-      id: '/optimizer'
-      path: '/optimizer'
-      fullPath: '/optimizer'
-      preLoaderRoute: typeof OptimizerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lists': {
-      id: '/lists'
-      path: '/lists'
-      fullPath: '/lists'
-      preLoaderRoute: typeof ListsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -240,8 +200,6 @@ const rootRouteChildren: RootRouteChildren = {
   CalculatorRoute: CalculatorRoute,
   CollectionRoute: CollectionRoute,
   DashboardRoute: DashboardRoute,
-  ListsRoute: ListsRoute,
-  OptimizerRoute: OptimizerRoute,
   ProfileRoute: ProfileRoute,
   RollsRoute: RollsRoute,
   StatisticsRoute: StatisticsRoute,

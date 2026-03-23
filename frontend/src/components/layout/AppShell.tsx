@@ -18,16 +18,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 							<Link to="/collection">Collection</Link>
 						</Button>
 						<Button asChild variant="ghost">
-							<Link to="/lists">Lists</Link>
-						</Button>
-						<Button asChild variant="ghost">
 							<Link to="/rolls">Rolls</Link>
 						</Button>
 						<Button asChild variant="ghost">
 							<Link to="/calculator">Calculator</Link>
-						</Button>
-						<Button asChild variant="ghost">
-							<Link to="/optimizer">Optimizer</Link>
 						</Button>
 						<Button asChild variant="ghost">
 							<Link to="/statistics">Statistics</Link>
