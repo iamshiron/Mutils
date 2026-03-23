@@ -1,4 +1,22 @@
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { KAKERA_COLORS } from "@/lib/constants";
 import type {
 	CreateKakeraClaimRequest,
@@ -6,21 +24,6 @@ import type {
 	KakeraType,
 	UpdateKakeraClaimRequest,
 } from "@/types";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-	NativeSelect,
-	NativeSelectOption,
-} from "@/components/ui/native-select";
 
 interface KakeraClaimModalProps {
 	isOpen: boolean;
@@ -153,18 +156,21 @@ export function KakeraClaimModal({
 
 					<div>
 						<Label htmlFor="kakera-type">Kakera Type</Label>
-						<NativeSelect
-							id="kakera-type"
+						<Select
 							value={type}
-							onChange={(e) => handleTypeChange(e.target.value as KakeraType)}
-							className="mt-1.5"
+							onValueChange={(v) => handleTypeChange(v as KakeraType)}
 						>
-							{KAKERA_TYPES.map((t) => (
-								<NativeSelectOption key={t.value} value={t.value}>
-									{t.label}
-								</NativeSelectOption>
-							))}
-						</NativeSelect>
+							<SelectTrigger id="kakera-type" className="mt-1.5">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{KAKERA_TYPES.map((t) => (
+									<SelectItem key={t.value} value={t.value}>
+										{t.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 
 					<div>
