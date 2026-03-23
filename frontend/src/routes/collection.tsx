@@ -691,6 +691,9 @@ function CollectionPage() {
 		"all" | "disabled" | "enabled"
 	>("all");
 	const [selectedKeyTypes, setSelectedKeyTypes] = useState<string[]>([]);
+	const [wishStatus, setWishStatus] = useState<
+		"wish" | "starwish" | "inwishlist" | null
+	>(null);
 	const queryClient = useQueryClient();
 	const { isAuthenticated, isLoading: authLoading } = useAuth();
 	const navigate = useNavigate();
@@ -701,13 +704,15 @@ function CollectionPage() {
 		minKeys > 0 ||
 		minKakera > 0 ||
 		disabledFilter !== "all" ||
-		selectedKeyTypes.length > 0;
+		selectedKeyTypes.length > 0 ||
+		wishStatus !== null;
 
 	const clearAllFilters = () => {
 		setMinKeys(0);
 		setMinKakera(0);
 		setDisabledFilter("all");
 		setSelectedKeyTypes([]);
+		setWishStatus(null);
 	};
 
 	const toggleKeyType = (keyType: string) => {
@@ -720,7 +725,14 @@ function CollectionPage() {
 
 	useEffect(() => {
 		setPage(1);
-	}, [debouncedSearch, minKeys, minKakera, disabledFilter, selectedKeyTypes]);
+	}, [
+		debouncedSearch,
+		minKeys,
+		minKakera,
+		disabledFilter,
+		selectedKeyTypes,
+		wishStatus,
+	]);
 
 	const { data, isLoading, error } = useQuery({
 		queryKey: [
@@ -736,6 +748,7 @@ function CollectionPage() {
 					disabledFilter === "all" ? undefined : disabledFilter === "disabled",
 				keyTypes:
 					selectedKeyTypes.length > 0 ? selectedKeyTypes.join(",") : undefined,
+				wishStatus: wishStatus ?? undefined,
 			},
 		],
 		queryFn: () =>
@@ -751,6 +764,7 @@ function CollectionPage() {
 					disabledFilter === "all" ? undefined : disabledFilter === "disabled",
 				keyTypes:
 					selectedKeyTypes.length > 0 ? selectedKeyTypes.join(",") : undefined,
+				wishStatus: wishStatus ?? undefined,
 			}),
 		enabled: isAuthenticated,
 		placeholderData: keepPreviousData,
@@ -775,6 +789,12 @@ function CollectionPage() {
 	const { data: wishlistData } = useQuery({
 		queryKey: ["wishlist-all"],
 		queryFn: () => listsApi.getWishlist({ pageSize: 1000 }),
+		enabled: isAuthenticated,
+	});
+
+	const { data: wishlistStats } = useQuery({
+		queryKey: ["wishlist-stats"],
+		queryFn: () => listsApi.getWishlistStats(),
 		enabled: isAuthenticated,
 	});
 
@@ -1026,7 +1046,7 @@ function CollectionPage() {
 				</div>
 
 				{stats && Object.keys(stats.keyDistribution).length > 0 && (
-					<div className="flex gap-2 flex-wrap">
+					<div className="flex gap-2 flex-wrap items-center">
 						{Object.entries(stats.keyDistribution)
 							.sort(([a], [b]) => {
 								const order = ["bronzekey", "silverkey", "goldkey", "chaoskey"];
@@ -1055,6 +1075,44 @@ function CollectionPage() {
 									</button>
 								);
 							})}
+
+						{wishlistStats && wishlistStats.totalCount > 0 && (
+							<>
+								<div className="w-px h-5 bg-border mx-1" />
+								<button
+									onClick={() =>
+										setWishStatus(wishStatus === "starwish" ? null : "starwish")
+									}
+									className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+										wishStatus === "starwish"
+											? "bg-warning/10 text-warning ring-1 ring-warning/20"
+											: "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+									}`}
+								>
+									<StarIcon size={12} weight="fill" className="text-warning" />
+									<span>Starwish</span>
+									<span className="opacity-60">
+										{wishlistStats.starwishCount}
+									</span>
+								</button>
+								<button
+									onClick={() =>
+										setWishStatus(wishStatus === "wish" ? null : "wish")
+									}
+									className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+										wishStatus === "wish"
+											? "bg-muted-foreground/10 text-muted-foreground ring-1 ring-muted-foreground/20"
+											: "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+									}`}
+								>
+									<StarIcon size={12} />
+									<span>Wish</span>
+									<span className="opacity-60">
+										{wishlistStats.regularCount}
+									</span>
+								</button>
+							</>
+						)}
 					</div>
 				)}
 			</div>
@@ -1267,6 +1325,22 @@ function CollectionPage() {
 							</Badge>
 						);
 					})}
+					{wishStatus && (
+						<Badge variant="secondary" className="gap-1 pr-1">
+							<StarIcon
+								size={10}
+								weight={wishStatus === "starwish" ? "fill" : "regular"}
+								className={wishStatus === "starwish" ? "text-warning" : ""}
+							/>
+							{wishStatus === "starwish" ? "Starwish" : "Wish"}
+							<button
+								onClick={() => setWishStatus(null)}
+								className="ml-1 hover:bg-background/50 rounded-sm p-0.5"
+							>
+								<XIcon size={10} />
+							</button>
+						</Badge>
+					)}
 					<Button
 						variant="ghost"
 						size="sm"

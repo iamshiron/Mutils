@@ -24,6 +24,7 @@ public static class CollectionEndpoints {
             int? minKakera,
             bool? isDisabled,
             string? keyTypes,
+            string? wishStatus,
             int page = 1,
             int pageSize = 50) => {
                 var userId = GetUserId(user);
@@ -64,6 +65,15 @@ public static class CollectionEndpoints {
                         (hasGold && e.Character.KeyCount >= 6 && e.Character.KeyCount < 10) ||
                         (hasChaos && e.Character.KeyCount >= 10)
                     );
+                }
+
+                if (!string.IsNullOrEmpty(wishStatus)) {
+                    query = wishStatus.ToLower() switch {
+                        "wish" => query.Where(e => db.WishlistEntries.Any(w => w.CharacterId == e.CharacterId && w.UserId == userId && !w.IsStarwish)),
+                        "starwish" => query.Where(e => db.WishlistEntries.Any(w => w.CharacterId == e.CharacterId && w.UserId == userId && w.IsStarwish)),
+                        "inwishlist" => query.Where(e => db.WishlistEntries.Any(w => w.CharacterId == e.CharacterId && w.UserId == userId)),
+                        _ => query
+                    };
                 }
 
                 sortBy ??= "rank";

@@ -111,6 +111,7 @@ export const collectionApi = {
 		minKakera?: number;
 		isDisabled?: boolean;
 		keyTypes?: string;
+		wishStatus?: "wish" | "starwish" | "inwishlist";
 	}) => {
 		const { data } = await api.get<PaginatedResponse<CollectionEntry>>(
 			"/collection",
