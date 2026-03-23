@@ -1,19 +1,125 @@
 import {
 	CheckCircleIcon,
+	ClockIcon,
 	DiceFiveIcon,
 	KeyIcon,
+	SparkleIcon,
 	StarIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { isAfter, parseISO, subDays } from "date-fns";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { collectionApi, profileApi } from "@/lib/api";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
+import { collectionApi, kakeraApi, profileApi } from "@/lib/api";
+import { KAKERA_COLORS } from "@/lib/constants";
+import type { KakeraClaim, KakeraType } from "@/types";
 
 export const Route = createFileRoute("/rolls")({
 	component: RollsPage,
 });
+
+type TimeframeKey = "week" | "month" | "3months";
+
+const TIMEFRAME_CONFIG: Record<TimeframeKey, { label: string; days: number }> =
+	{
+		week: { label: "7 Days", days: 7 },
+		month: { label: "30 Days", days: 30 },
+		"3months": { label: "90 Days", days: 90 },
+	};
+
+const KAKERA_TYPE_ORDER: KakeraType[] = [
+	"chaos",
+	"dark",
+	"light",
+	"rainbow",
+	"red",
+	"orange",
+	"yellow",
+	"green",
+	"teal",
+	"blue",
+	"purple",
+	"bku",
+];
+
+interface KakeraTypeStats {
+	type: KakeraType | string;
+	count: number;
+	chance: number;
+	totalValue: number;
+	avgValue: number;
+	estPerRoll: number;
+}
+
+function filterClaimsByTimeframe(
+	claims: KakeraClaim[],
+	timeframe: TimeframeKey,
+): KakeraClaim[] {
+	const days = TIMEFRAME_CONFIG[timeframe].days;
+	const cutoff = subDays(new Date(), days);
+	return claims.filter((claim) => {
+		const claimDate = parseISO(claim.claimedAt);
+		return isAfter(claimDate, cutoff);
+	});
+}
+
+function calculateKakeraStats(claims: KakeraClaim[]): KakeraTypeStats[] {
+	const totalClaims = claims.length;
+	if (totalClaims === 0) return [];
+
+	const byType: Record<string, { count: number; totalValue: number }> = {};
+
+	for (const claim of claims) {
+		const type = claim.type;
+		if (!byType[type]) {
+			byType[type] = { count: 0, totalValue: 0 };
+		}
+		byType[type].count++;
+		byType[type].totalValue += claim.value;
+	}
+
+	const orderedTypes = KAKERA_TYPE_ORDER.filter((type) => byType[type]);
+	const remainingTypes = Object.keys(byType).filter(
+		(type) => !KAKERA_TYPE_ORDER.includes(type as KakeraType),
+	);
+	const allTypes = [...orderedTypes, ...remainingTypes];
+
+	return allTypes.map((type) => {
+		const data = byType[type];
+		const chance = data.count / totalClaims;
+		const avgValue = data.totalValue / data.count;
+		return {
+			type,
+			count: data.count,
+			chance,
+			totalValue: data.totalValue,
+			avgValue,
+			estPerRoll: chance * avgValue,
+		};
+	});
+}
+
+function calculateWeightedAverage(stats: KakeraTypeStats[]): number {
+	return stats.reduce((sum, s) => sum + s.estPerRoll, 0);
+}
+
+function getKakeraColor(type: KakeraType | string): string {
+    const typeStr = String(type).toLowerCase();
+    return KAKERA_COLORS[typeStr as KakeraType] || "var(--foreground)";
+}
 
 interface CalculationResults {
 	effectivePool: number;
@@ -141,6 +247,9 @@ function formatPercent(value: number, decimals = 4): string {
 }
 
 function RollsPage() {
+	const { isAuthenticated } = useAuth();
+	const [timeframe, setTimeframe] = useState<TimeframeKey>("month");
+
 	const { data: profile, isLoading: profileLoading } = useQuery({
 		queryKey: ["profile"],
 		queryFn: profileApi.get,
@@ -149,6 +258,12 @@ function RollsPage() {
 	const { data: collectionStats, isLoading: statsLoading } = useQuery({
 		queryKey: ["collection-stats"],
 		queryFn: collectionApi.getStats,
+	});
+
+	const { data: kakeraClaims } = useQuery({
+		queryKey: ["kakera-claims"],
+		queryFn: () => kakeraApi.getClaims(),
+		enabled: isAuthenticated,
 	});
 
 	if (profileLoading || statsLoading) {
@@ -187,6 +302,17 @@ function RollsPage() {
 		0,
 		inputs.totalRolls - inputs.bwRollsInvested,
 	);
+
+	const filteredClaims = kakeraClaims
+		? filterClaimsByTimeframe(kakeraClaims, timeframe)
+		: [];
+	const kakeraStats = calculateKakeraStats(filteredClaims);
+	const avgKakeraPerClaim = calculateWeightedAverage(kakeraStats);
+
+	const totalHitChance =
+		results.starwishProb + results.wishProb + results.ownedProb;
+	const expectedClaimsPerHour = totalHitChance * effectiveRolls;
+	const estimatedHourlyKakera = avgKakeraPerClaim * expectedClaimsPerHour;
 
 	return (
 		<div className="max-w-6xl mx-auto">
@@ -359,6 +485,123 @@ function RollsPage() {
 					/>
 				)}
 			</div>
+
+			{kakeraClaims && kakeraClaims.length > 0 && (
+				<>
+					<div className="mt-8 flex items-center justify-between">
+						<div>
+							<h2 className="text-xl font-bold flex items-center gap-2">
+								<SparkleIcon size={20} className="text-primary" />
+								Kakera Estimates
+							</h2>
+							<p className="text-muted-foreground text-sm">
+								Based on your historical kakera claim data
+							</p>
+						</div>
+						<div className="flex gap-1 bg-muted rounded-lg p-1">
+							{(Object.keys(TIMEFRAME_CONFIG) as TimeframeKey[]).map((key) => (
+								<Button
+									key={key}
+									variant={timeframe === key ? "default" : "ghost"}
+									size="sm"
+									onClick={() => setTimeframe(key)}
+									className="text-xs"
+								>
+									{TIMEFRAME_CONFIG[key].label}
+								</Button>
+							))}
+						</div>
+					</div>
+
+					<div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						<Card className="glass lg:col-span-3 border-primary/30">
+							<CardContent>
+								<h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
+									Kakera Type Distribution ({TIMEFRAME_CONFIG[timeframe].label})
+								</h3>
+								<div className="overflow-x-auto">
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead>Type</TableHead>
+												<TableHead className="text-right">Count</TableHead>
+												<TableHead className="text-right">Chance</TableHead>
+												<TableHead className="text-right">Avg Value</TableHead>
+												<TableHead className="text-right">Est./Roll</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{kakeraStats.map((stat) => (
+												<TableRow key={stat.type}>
+													<TableCell>
+														<div className="flex items-center gap-2">
+															<div
+																className="w-3 h-3 rounded-full"
+																style={{
+																	backgroundColor: getKakeraColor(stat.type),
+																}}
+															/>
+															<span className="capitalize">{stat.type}</span>
+														</div>
+													</TableCell>
+													<TableCell className="text-right font-mono">
+														{stat.count.toLocaleString()}
+													</TableCell>
+													<TableCell className="text-right font-mono text-muted-foreground">
+														{formatPercent(stat.chance, 1)}
+													</TableCell>
+													<TableCell className="text-right font-mono">
+														{Math.round(stat.avgValue).toLocaleString()}
+													</TableCell>
+													<TableCell className="text-right font-mono font-semibold text-primary">
+														{stat.estPerRoll.toFixed(2)}
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</div>
+								<div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
+									<span className="text-sm text-muted-foreground">
+										Total Claims: {filteredClaims.length}
+									</span>
+									<span className="text-sm font-semibold">
+										Weighted Avg:{" "}
+										<span className="text-primary">
+											{avgKakeraPerClaim.toFixed(2)} kakera
+										</span>
+									</span>
+								</div>
+							</CardContent>
+						</Card>
+
+						<ResultCard
+							title="Est. Hourly Kakera"
+							icon={<ClockIcon size={16} className="text-info" />}
+							value={`~${Math.round(estimatedHourlyKakera).toLocaleString()}`}
+							subtext={`${effectiveRolls} rolls × ${(totalHitChance * 100).toFixed(2)}% hit rate × ${avgKakeraPerClaim.toFixed(0)} avg`}
+							variant="info"
+						/>
+
+						<ResultCard
+							title="Total Hit Chance"
+							icon={<CheckCircleIcon size={16} className="text-success" />}
+							percent={formatPercent(totalHitChance, 2)}
+							odds={formatOdds(totalHitChance)}
+							subtext={`Starwish + Wish + Owned (${effectiveRolls} rolls/hr)`}
+							variant="success"
+						/>
+
+						<ResultCard
+							title="Est. Kakera per Claim"
+							icon={<SparkleIcon size={16} className="text-primary" />}
+							value={`~${Math.round(avgKakeraPerClaim).toLocaleString()}`}
+							subtext={`Based on ${filteredClaims.length} claims (${TIMEFRAME_CONFIG[timeframe].label})`}
+							variant="primary"
+						/>
+					</div>
+				</>
+			)}
 		</div>
 	);
 }
