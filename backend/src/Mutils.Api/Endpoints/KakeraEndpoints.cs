@@ -9,7 +9,7 @@ namespace Mutils.Api.Endpoints;
 
 public static class KakeraEndpoints {
     public static void MapKakeraEndpoints(this IEndpointRouteBuilder app) {
-        var group = app.MapGroup("/api/kakera").RequireAuthorization();
+        var group = app.MapGroup("/api/kakera").RequireAuthorization().WithTags("Kakera");
 
         group.MapGet("/claims", async (
             ClaimsPrincipal user,

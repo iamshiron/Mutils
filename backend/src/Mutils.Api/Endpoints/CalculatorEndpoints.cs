@@ -7,7 +7,7 @@ namespace Mutils.Api.Endpoints;
 
 public static class CalculatorEndpoints {
     public static void MapCalculatorEndpoints(this IEndpointRouteBuilder app) {
-        var group = app.MapGroup("/api/calculator").RequireAuthorization();
+        var group = app.MapGroup("/api/calculator").RequireAuthorization().WithTags("Calculator");
 
         group.MapGet("/", async (
             ClaimsPrincipal user,

@@ -12,7 +12,7 @@ public static class CollectionEndpoints {
     private static readonly ILogger Logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger("CollectionEndpoints");
 
     public static void MapCollectionEndpoints(this IEndpointRouteBuilder app) {
-        var group = app.MapGroup("/api/collection").RequireAuthorization();
+        var group = app.MapGroup("/api/collection").RequireAuthorization().WithTags("Collection");
 
         group.MapGet("/", async (
             ClaimsPrincipal user,

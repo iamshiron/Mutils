@@ -8,7 +8,7 @@ namespace Mutils.Api.Endpoints;
 
 public static class ProfileEndpoints {
     public static void MapProfileEndpoints(this IEndpointRouteBuilder app) {
-        var group = app.MapGroup("/api/profile").RequireAuthorization();
+        var group = app.MapGroup("/api/profile").RequireAuthorization().WithTags("Profile");
 
         group.MapGet("/", async (
             ClaimsPrincipal user,

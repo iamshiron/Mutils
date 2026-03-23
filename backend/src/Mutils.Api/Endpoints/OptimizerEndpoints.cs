@@ -6,7 +6,7 @@ namespace Mutils.Api.Endpoints;
 
 public static class OptimizerEndpoints {
     public static void MapOptimizerEndpoints(this IEndpointRouteBuilder app) {
-        var group = app.MapGroup("/api/optimizer").RequireAuthorization();
+        var group = app.MapGroup("/api/optimizer").RequireAuthorization().WithTags("Optimizer");
 
         group.MapPost("/analyze", async (
             ClaimsPrincipal user,

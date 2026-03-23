@@ -7,7 +7,7 @@ namespace Mutils.Api.Endpoints;
 
 public static class UserEndpoints {
     public static void MapUserEndpoints(this IEndpointRouteBuilder app) {
-        var group = app.MapGroup("/api/user").RequireAuthorization();
+        var group = app.MapGroup("/api/user").RequireAuthorization().WithTags("User");
 
         group.MapGet("/me", async (
             ClaimsPrincipal user,

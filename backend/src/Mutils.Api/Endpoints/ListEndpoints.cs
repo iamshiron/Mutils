@@ -8,7 +8,7 @@ namespace Mutils.Api.Endpoints;
 
 public static class ListEndpoints {
     public static void MapListEndpoints(this IEndpointRouteBuilder app) {
-        var group = app.MapGroup("/api/lists").RequireAuthorization();
+        var group = app.MapGroup("/api/lists").RequireAuthorization().WithTags("Lists & Wishlist");
 
         group.MapGet("/enable", async (
             ClaimsPrincipal user,
